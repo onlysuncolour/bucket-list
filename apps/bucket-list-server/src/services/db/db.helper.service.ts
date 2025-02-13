@@ -1,3 +1,4 @@
+import { ResultSetHeader } from 'mysql2/promise';
 import { dbExecute } from './index.service';
 
 type TDbWhere = {
@@ -99,7 +100,7 @@ export async function handleSelectData({
     sql += ` OFFSET ${offset}`;
   }
   sql += ';';
-  const result = await dbExecute(sql, values);
+  const result = (await dbExecute(sql, values))?.[0] as any[];
   return result;
 }
 
@@ -114,7 +115,7 @@ export async function handleInsertData({
 }) {
   const sql = `INSERT INTO ${table} (${fields.join(',')}) VALUES ${data.map(() => `(${fields.map(() => '?').join(',')})`).join(',')}`;
   const values = data.map((item) => fields.map((field) => item[field]));
-  const result = await dbExecute(sql, values);
+  const result = (await dbExecute(sql, values))?.[0] as ResultSetHeader;
   return result;
 }
 
@@ -143,7 +144,7 @@ export async function handleUpdateData({
   }
   sql += ';';
   const values = [...data.map((item) => fields.map((field) => item[field])), ...whereValues];
-  const result = await dbExecute(sql, values);
+  const result = (await dbExecute(sql, values))?.[0] as ResultSetHeader;
   return result;
 }
 
@@ -165,7 +166,7 @@ export async function handleCreateOrUpdateData({
     ${fields.filter(field => !uniqueKeys.includes(field)).map(field => `${field} = VALUES(${field})`).join(',')}
     ;`;
   const values = data.map((item) => fields.map((field) => item[field]));
-  const result = await dbExecute(sql, values);
+  const result = (await dbExecute(sql, values))?.[0] as ResultSetHeader;
   return result;
 
 }
@@ -189,7 +190,7 @@ export async function handleDeleteData({
   }
   sql += ';';
   const values = [...whereValues];
-  const result = await dbExecute(sql, values);
+  const result = (await dbExecute(sql, values))?.[0] as ResultSetHeader;
   return result;
 }
 
