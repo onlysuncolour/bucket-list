@@ -1,8 +1,8 @@
-export interface BucketList {
+export interface TBucketList {
   id: string;
   title: string;
   description?: string;
-  steps: Step[];
+  steps: TStep[];
   category?: string;
   tags?: string[];
   createdAt: Date;
@@ -12,11 +12,11 @@ export interface BucketList {
   isCompleted: boolean;
 }
 
-export interface Step {
+export interface TStep {
   id: string;
   title: string;
   description?: string;
-  subSteps?: Step[];
+  subSteps?: TStep[];
   bucketListId: string;
   parentStepId?: string;
   category?: string;
@@ -28,7 +28,7 @@ export interface Step {
   isCompleted: boolean;
 }
 
-export interface Comment {
+export interface TComment {
   id: string;
   content: string;
   bucketListId?: string;

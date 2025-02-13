@@ -1,5 +1,5 @@
 // 数据库模型（下划线命名）
-export interface BucketListModel {
+export interface TBucketListModel {
   id: string;
   title: string;
   description?: string;
@@ -12,7 +12,7 @@ export interface BucketListModel {
   is_completed: boolean;
 }
 
-export interface StepModel {
+export interface TStepModel {
   id: string;
   title: string;
   description?: string;
@@ -27,7 +27,7 @@ export interface StepModel {
   is_completed: boolean;
 }
 
-export interface CommentModel {
+export interface TCommentModel {
   id: string;
   content: string;
   bucket_list_id?: string;
@@ -40,16 +40,16 @@ export interface CommentModel {
 }
 
 // 业务层模型（驼峰命名）
-export interface BucketListEntity extends Omit<BucketListModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'is_completed'> {
+export interface TBucketListEntity extends Omit<TBucketListModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'is_completed'> {
   createdAt: Date;
   updatedAt: Date;
   creatorId: string;
   isDeleted: boolean;
   isCompleted: boolean;
-  steps?: StepEntity[];
+  steps?: TStepEntity[];
 }
 
-export interface StepEntity extends Omit<StepModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'is_completed' | 'bucket_list_id' | 'parent_step_id'> {
+export interface TStepEntity extends Omit<TStepModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'is_completed' | 'bucket_list_id' | 'parent_step_id'> {
   createdAt: Date;
   updatedAt: Date;
   creatorId: string;
@@ -57,10 +57,10 @@ export interface StepEntity extends Omit<StepModel, 'created_at' | 'updated_at' 
   isCompleted: boolean;
   bucketListId: string;
   parentStepId?: string;
-  subSteps?: StepEntity[];
+  subSteps?: TStepEntity[];
 }
 
-export interface CommentEntity extends Omit<CommentModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'bucket_list_id' | 'step_id' | 'reply_to_comment_id'> {
+export interface TCommentEntity extends Omit<TCommentModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'bucket_list_id' | 'step_id' | 'reply_to_comment_id'> {
   createdAt: Date;
   updatedAt: Date;
   creatorId: string;

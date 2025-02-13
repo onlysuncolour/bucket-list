@@ -10,9 +10,6 @@ importers:
 
   apps/bucket-list-app:
     dependencies:
-      '@babel/runtime':
-        specifier: ^7.26.7
-        version: 7.26.7
       '@expo/vector-icons':
         specifier: ^14.0.2
         version: 14.0.4
@@ -92,6 +89,9 @@ importers:
       '@babel/core':
         specifier: ^7.25.2
         version: 7.26.8
+      '@babel/runtime':
+        specifier: ^7.26.7
+        version: 7.26.7
       '@types/jest':
         specifier: ^29.5.12
         version: 29.5.14
@@ -147,6 +147,9 @@ importers:
       bucket-list-types:
         specifier: workspace:*
         version: link:../../packages/bucket-list-types
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       eslint:
         specifier: ^9
         version: 9.20.1(jiti@1.21.7)

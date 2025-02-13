@@ -1,8 +1,9 @@
 // 前端使用的类型定义（驼峰命名）
-export interface User {
+export interface TUser {
   id: string;
   displayName: string;
   avatarUrl?: string;
+  deviceUuid?: string;
   appleId?: string;
   googleId?: string;
   phoneNumber?: string;
@@ -12,7 +13,8 @@ export interface User {
   lastLoginAt: Date;
 }
 
-export interface UserLoginInfo {
+export interface TUserLoginInfo {
+  deviceUuid?: string;
   appleId?: string;
   googleId?: string;
   phoneNumber?: string;
@@ -20,7 +22,7 @@ export interface UserLoginInfo {
   wechatId?: string;
 }
 
-export interface UserUpdateInfo {
+export interface TUserUpdateInfo {
   displayName?: string;
   avatarUrl?: string;
 }
