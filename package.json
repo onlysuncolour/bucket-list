@@ -1,0 +1,15 @@
+{
+  "name": "bucket-list-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:app": "pnpm --filter bucket-list-app start",
+    "dev:server": "pnpm --filter bucket-list-server dev",
+    "build:app": "pnpm --filter bucket-list-app build",
+    "build:server": "pnpm --filter bucket-list-server build"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
