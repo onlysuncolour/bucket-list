@@ -1,9 +1,9 @@
-import { TBucketListEntity, TBucketListModel } from 'bucket-list-types';
+import { TBucketListEntity } from 'bucket-list-types';
 import { BucketListModel } from './model';
 import { handleError } from '../error-handler';
 
 export class BucketListService {
-  static async createBucketList(data: Omit<TBucketListModel, 'id' | 'created_at' | 'updated_at'>) {
+  static async createBucketList(data: Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>) {
     try {
       const id = await BucketListModel.create(data);
       return await this.getBucketListById(id);
@@ -12,7 +12,7 @@ export class BucketListService {
     }
   }
 
-  static async updateBucketList(id: string, data: Partial<Omit<TBucketListModel, 'id' | 'created_at' | 'updated_at'>>) {
+  static async updateBucketList(id: string, data: Partial<Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>>) {
     try {
       const existingBucketList = await this.getBucketListById(id);
       if (!existingBucketList) {
@@ -85,7 +85,7 @@ export class BucketListService {
         throw notFoundError;
       }
 
-      await BucketListModel.update(id, { is_completed: true });
+      await BucketListModel.update(id, { isCompleted: true });
       return await this.getBucketListById(id);
     } catch (error) {
       throw handleError(error as Error);
@@ -101,7 +101,7 @@ export class BucketListService {
         throw notFoundError;
       }
 
-      await BucketListModel.update(id, { is_completed: false });
+      await BucketListModel.update(id, { isCompleted: false });
       return await this.getBucketListById(id);
     } catch (error) {
       throw handleError(error as Error);

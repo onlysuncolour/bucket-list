@@ -4,7 +4,7 @@ import { dbExecute } from './index.service';
 type TDbWhere = {
   key: string
   value: any
-  type: '=' | '>' | '<' | '>=' | '<=' | '!=' | 'like' | 'in' | 'between'
+  type: '=' | '>' | '<' | '>=' | '<=' | '!=' | 'like' | 'in' | 'between' | 'LIKE' | 'IN' | 'BETWEEN'
 }
 
 type TDbJoinField = {

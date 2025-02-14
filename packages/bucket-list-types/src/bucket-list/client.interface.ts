@@ -12,6 +12,13 @@ export interface TBucketList {
   isCompleted: boolean;
 }
 
+export interface TBucketListTag {
+  id: string;
+  bucketListId: string;
+  name: string;
+  tagId: string;
+}
+
 export interface TStep {
   id: string;
   title: string;

@@ -4,12 +4,23 @@ export interface TBucketListModel {
   title: string;
   description?: string;
   category?: string;
-  tags?: string[];
   created_at: Date;
   updated_at: Date;
   creator_id: string;
   is_deleted: boolean;
   is_completed: boolean;
+}
+
+export interface TBucketTagModel {
+  id: string;
+  name: string;
+}
+
+export interface TBucketListTagModel {
+  id: string;
+  bucket_list_id: string;
+  name: string;
+  tag_id: string;
 }
 
 export interface TStepModel {
@@ -46,7 +57,13 @@ export interface TBucketListEntity extends Omit<TBucketListModel, 'created_at' |
   creatorId: string;
   isDeleted: boolean;
   isCompleted: boolean;
+  tags?: TBucketListTagEntity[];
   steps?: TStepEntity[];
+}
+
+export interface TBucketListTagEntity extends Omit<TBucketListTagModel, 'bucket_list_id' | 'tag_id'> {
+  bucketListId: string;
+  tagId: string
 }
 
 export interface TStepEntity extends Omit<TStepModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'is_completed' | 'bucket_list_id' | 'parent_step_id'> {
