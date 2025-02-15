@@ -1,5 +1,10 @@
 import { handleSelectData, handleInsertData, handleUpdateData } from '../db/db.helper.service';
 import { getUuid } from '@/utils';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret';
+const ACCESS_TOKEN_EXPIRES_IN = '1h';
+const REFRESH_TOKEN_EXPIRES_IN_DAYS = 365;
 
 export interface RefreshToken {
   id: string;
@@ -12,6 +17,27 @@ export interface RefreshToken {
 }
 
 export class LoginModel {
+  // 生成访问令牌
+  static generateAccessToken(userId: string): string {
+    return jwt.sign({ userId }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+  }
+
+  // 验证访问令牌
+  static verifyAccessToken(accessToken: string): { userId: string } | null {
+    try {
+      const decoded = jwt.verify(accessToken, JWT_SECRET) as { userId: string };
+      return decoded;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // 计算刷新令牌过期时间
+  static calculateRefreshTokenExpiry(): Date {
+    const expiredAt = new Date();
+    expiredAt.setDate(expiredAt.getDate() + REFRESH_TOKEN_EXPIRES_IN_DAYS);
+    return expiredAt;
+  }
   // 创建刷新令牌
   static async createRefreshToken(userId: string, token: string, expiredAt: Date): Promise<RefreshToken> {
     const id = getUuid();

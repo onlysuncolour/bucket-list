@@ -89,3 +89,15 @@ CREATE TABLE IF NOT EXISTS bucket_list_tags (
   FOREIGN KEY (bucket_list_id) REFERENCES bucket_lists(id),
   FOREIGN KEY (tag_id) REFERENCES bucket_tags(id)
 );
+
+-- 创建遗愿清单分享表
+CREATE TABLE IF NOT EXISTS bucket_list_shares (
+  id VARCHAR(36) PRIMARY KEY,
+  bucket_list_id VARCHAR(36) NOT NULL,
+  creator_id VARCHAR(36) NOT NULL,
+  share_to_id VARCHAR(36) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (bucket_list_id) REFERENCES bucket_lists(id),
+  FOREIGN KEY (creator_id) REFERENCES users(id),
+  FOREIGN KEY (share_to_id) REFERENCES users(id)
+);

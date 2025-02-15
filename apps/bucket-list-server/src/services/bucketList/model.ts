@@ -12,10 +12,93 @@ export class BucketListModel {
     return ['demo-tag-1', 'demo-tag-2'];
   }
 
-  static async create(data: Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt' | 'steps'>) {
+  private static async updateTags(bucketListId: string, tags: string[]) {
+    // 删除旧的标签关联
+    await handleDeleteData({
+      table: BUCKET_LIST_TAGS_TABLE,
+      where: [{ key: 'bucket_list_id', value: bucketListId, type: '=' }],
+    });
+
+    // 创建新的标签关联
+    for (const tagName of tags) {
+      const tagId = crypto.randomUUID();
+      await handleCreateOrUpdateData({
+        table: BUCKET_TAGS_TABLE,
+        fields: ['id', 'name'],
+        data: [{ id: tagId, name: tagName }],
+        uniqueKeys: ['name'],
+      });
+
+      await handleCreateOrUpdateData({
+        table: BUCKET_LIST_TAGS_TABLE,
+        fields: ['id', 'bucket_list_id', 'name', 'tag_id'],
+        data: [{
+          id: crypto.randomUUID(),
+          bucket_list_id: bucketListId,
+          name: tagName,
+          tag_id: tagId,
+        }],
+        uniqueKeys: ['bucket_list_id', 'tag_id'],
+      });
+    }
+  }
+
+  private static async updateSteps(bucketListId: string, steps: Omit<TStepEntity, 'createdAt' | 'updatedAt' | 'bucketListId'>[] = []) {
+    // 获取当前所有的步骤
+    const currentSteps = await handleSelectData({
+      table: 'steps',
+      where: [
+        { key: 'bucket_list_id', value: bucketListId, type: '=' },
+        { key: 'is_deleted', value: false, type: '=' },
+      ],
+    });
+
+    // 标记所有现有步骤为已删除
+    if (currentSteps.length > 0) {
+      await handleUpdateData({
+        table: 'steps',
+        fields: ['is_deleted'],
+        data: [{ is_deleted: true }],
+        where: [{ key: 'bucket_list_id', value: bucketListId, type: '=' }],
+      });
+    }
+
+    // 创建或更新步骤
+    for (const step of steps) {
+      const stepId = step.id || crypto.randomUUID();
+      await handleCreateOrUpdateData({
+        table: 'steps',
+        fields: ['id', 'title', 'description', 'bucket_list_id', 'parent_step_id', 'category', 'tags', 'creator_id', 'is_deleted', 'is_completed'],
+        data: [{
+          id: stepId,
+          title: step.title,
+          description: step.description,
+          bucket_list_id: bucketListId,
+          parent_step_id: step.parentStepId,
+          category: step.category,
+          tags: step.tags,
+          creator_id: step.creatorId,
+          is_deleted: false,
+          is_completed: step.isCompleted,
+        }],
+        uniqueKeys: ['id'],
+      });
+
+      // 递归处理子步骤
+      if (step.subSteps && step.subSteps.length > 0) {
+        const subSteps = step.subSteps.map(subStep => ({
+          ...subStep,
+          parentStepId: stepId,
+        }));
+        await this.updateSteps(bucketListId, subSteps);
+      }
+    }
+  }
+
+  static async create(data: Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>) {
     const id = crypto.randomUUID();
     const generatedTags = this.generateTagsFromTitle(data.title);
-    const tags = data.tags || generatedTags;
+    const tags = data.tags?.map(tag => tag.name) || generatedTags;
 
     await handleCreateOrUpdateData({
       table: TABLE_NAME,
@@ -32,34 +115,25 @@ export class BucketListModel {
       uniqueKeys: ['id'],
     });
 
-    // 创建或更新标签
-    for (const tagName of tags) {
-      const tagId = crypto.randomUUID();
-      await handleCreateOrUpdateData({
-        table: BUCKET_TAGS_TABLE,
-        fields: ['id', 'name'],
-        data: [{ id: tagId, name: tagName }],
-        uniqueKeys: ['name'],
-      });
+    // 更新标签
+    await this.updateTags(id, tags);
 
-      // 创建标签关联
-      await handleCreateOrUpdateData({
-        table: BUCKET_LIST_TAGS_TABLE,
-        fields: ['id', 'bucket_list_id', 'name', 'tag_id'],
-        data: [{
-          id: crypto.randomUUID(),
-          bucket_list_id: id,
-          name: tagName,
-          tag_id: tagId,
-        }],
-        uniqueKeys: ['bucket_list_id', 'tag_id'],
-      });
+    // 更新步骤
+    if (data.steps && data.steps.length > 0) {
+      await this.updateSteps(id, data.steps);
     }
 
     return id;
   }
 
-  static async update(id: string, data: Partial<TBucketListEntity>) {
+  static async update(id: string, userId: string, data: Partial<TBucketListEntity>) {
+    // 验证用户是否为创建者
+    const { isCreator } = await this.validateUserAccess(id, userId);
+    if (!isCreator) {
+      const error = new Error('没有权限修改此遗愿清单');
+      error.name = 'PermissionError';
+      throw error;
+    }
     const updateData: Partial<TBucketListModel> = {};
     
     if (data.title) updateData.title = data.title;
@@ -77,45 +151,44 @@ export class BucketListModel {
       limit: 1,
     });
 
-    // 如果有标题更新，重新生成标签
+    // 处理标签更新
     if (data.title || data.tags) {
-      const currentBucketList = await this.findById(id);
+      const currentBucketList = await this.findById(id, userId);
       if (!currentBucketList) return;
 
-      const newTags = data.tags || (data.title ? this.generateTagsFromTitle(data.title) : currentBucketList.tags || []);
-      
-      // 删除旧的标签关联
-      await handleDeleteData({
-        table: BUCKET_LIST_TAGS_TABLE,
-        where: [{ key: 'bucket_list_id', value: id, type: '=' }],
-      });
-
-      // 创建新的标签关联
-      for (const tagName of newTags) {
-        const tagId = crypto.randomUUID();
-        await handleCreateOrUpdateData({
-          table: BUCKET_TAGS_TABLE,
-          fields: ['id', 'name'],
-          data: [{ id: tagId, name: tagName }],
-          uniqueKeys: ['name'],
-        });
-
-        await handleCreateOrUpdateData({
-          table: BUCKET_LIST_TAGS_TABLE,
-          fields: ['id', 'bucket_list_id', 'name', 'tag_id'],
-          data: [{
-            id: crypto.randomUUID(),
-            bucket_list_id: id,
-            name: tagName,
-            tag_id: tagId,
-          }],
-          uniqueKeys: ['bucket_list_id', 'tag_id'],
-        });
+      let newTags: string[] = [];
+      if (data.tags) {
+        newTags = data.tags.map(tag => tag.name);
+      } else if (data.title) {
+        const generatedTags = this.generateTagsFromTitle(data.title);
+        const currentTags = currentBucketList.tags?.map(tag => tag.name) || [];
+        // 只有当生成的标签与当前标签不同时才更新
+        if (JSON.stringify(generatedTags.sort()) !== JSON.stringify(currentTags.sort())) {
+          newTags = generatedTags;
+        } else {
+          newTags = currentTags;
+        }
       }
+
+      if (newTags.length > 0) {
+        await this.updateTags(id, newTags);
+      }
+    }
+
+    // 处理步骤更新
+    if (data.steps) {
+      await this.updateSteps(id, data.steps);
     }
   }
 
-  static async delete(id: string) {
+  static async delete(id: string, userId: string) {
+    // 验证用户是否为创建者
+    const { isCreator } = await this.validateUserAccess(id, userId);
+    if (!isCreator) {
+      const error = new Error('没有权限删除此遗愿清单');
+      error.name = 'PermissionError';
+      throw error;
+    }
     await handleUpdateData({
       table: TABLE_NAME,
       fields: ['is_deleted'],
@@ -125,7 +198,14 @@ export class BucketListModel {
     });
   }
 
-  static async hardDelete(id: string) {
+  static async hardDelete(id: string, userId: string) {
+    // 验证用户是否为创建者
+    const { isCreator } = await this.validateUserAccess(id, userId);
+    if (!isCreator) {
+      const error = new Error('没有权限删除此遗愿清单');
+      error.name = 'PermissionError';
+      throw error;
+    }
     await handleDeleteData({
       table: TABLE_NAME,
       where: [{ key: 'id', value: id, type: '=' }],
@@ -133,7 +213,46 @@ export class BucketListModel {
     });
   }
 
-  static async findById(id: string): Promise<TBucketListEntity | null> {
+  private static async validateUserAccess(bucketListId: string, userId: string): Promise<{ hasAccess: boolean; isCreator: boolean }> {
+    // 查询 bucket list 基础信息
+    const bucketList = await handleSelectData({
+      table: TABLE_NAME,
+      where: [
+        { key: 'id', value: bucketListId, type: '=' },
+        { key: 'is_deleted', value: false, type: '=' },
+      ],
+      limit: 1,
+    });
+
+    if (!bucketList || bucketList.length === 0) {
+      return { hasAccess: false, isCreator: false };
+    }
+
+    const isCreator = bucketList[0].creator_id === userId;
+
+    if (isCreator) {
+      return { hasAccess: true, isCreator: true };
+    }
+
+    // 检查是否被分享
+    const shareResult = await handleSelectData({
+      table: 'bucket_list_shares',
+      where: [
+        { key: 'bucket_list_id', value: bucketListId, type: '=' },
+        { key: 'share_to_id', value: userId, type: '=' },
+      ],
+      limit: 1,
+    });
+
+    return { hasAccess: shareResult && shareResult.length > 0, isCreator: false };
+  }
+
+  static async findById(id: string, userId: string): Promise<TBucketListEntity | null> {
+    // 验证用户访问权限
+    const { hasAccess } = await this.validateUserAccess(id, userId);
+    if (!hasAccess) {
+      return null;
+    }
     // 1. 查询 bucket list 基础信息
     const bucketListResult = await handleSelectData({
       table: TABLE_NAME,
@@ -289,6 +408,19 @@ export class BucketListModel {
     }
 
     return Array.from(bucketListMap.values());
+  }
+
+  static async validateExist(id: string): Promise<boolean> {
+    const result = await handleSelectData({
+      table: TABLE_NAME,
+      where: [
+        { key: 'id', value: id, type: '=' },
+        { key: 'is_deleted', value: false, type: '=' },
+      ],
+      limit: 1,
+    });
+
+    return result && result.length > 0;
   }
 
   private static parseToEntity(data: TBucketListModel): TBucketListEntity {

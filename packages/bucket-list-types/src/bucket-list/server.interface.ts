@@ -23,6 +23,14 @@ export interface TBucketListTagModel {
   tag_id: string;
 }
 
+export interface TBucketListShareModel {
+  id: string;
+  bucket_list_id: string;
+  creator_id: string;
+  share_to_id: string;
+  created_at: Date;
+}
+
 export interface TStepModel {
   id: string;
   title: string;

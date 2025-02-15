@@ -3,66 +3,57 @@ import { BucketListModel } from './model';
 import { handleError } from '../error-handler';
 
 export class BucketListService {
-  static async createBucketList(data: Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>) {
+  private static async validateBucketListExists(id: string): Promise<void> {
+    const exists = await BucketListModel.validateExist(id);
+    if (!exists) {
+      const notFoundError = new Error('Bucket List 不存在');
+      notFoundError.name = 'NotFoundError';
+      throw notFoundError;
+    }
+  }
+
+  static async createBucketList(data: Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>, userId: string) {
     try {
       const id = await BucketListModel.create(data);
-      return await this.getBucketListById(id);
+      return await this.getBucketListById(id, userId);
     } catch (error) {
       throw handleError(error as Error);
     }
   }
 
-  static async updateBucketList(id: string, data: Partial<Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>>) {
+  static async updateBucketList(id: string, userId: string, data: Partial<Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>>) {
     try {
-      const existingBucketList = await this.getBucketListById(id);
-      if (!existingBucketList) {
-        const notFoundError = new Error('Bucket List 不存在');
-        notFoundError.name = 'NotFoundError';
-        throw notFoundError;
-      }
-
-      await BucketListModel.update(id, data);
-      return await this.getBucketListById(id);
+      await this.validateBucketListExists(id);
+      await BucketListModel.update(id, userId, data);
+      return await this.getBucketListById(id, userId);
     } catch (error) {
       throw handleError(error as Error);
     }
   }
 
-  static async deleteBucketList(id: string) {
+  static async deleteBucketList(id: string, userId: string) {
     try {
-      const existingBucketList = await this.getBucketListById(id);
-      if (!existingBucketList) {
-        const notFoundError = new Error('Bucket List 不存在');
-        notFoundError.name = 'NotFoundError';
-        throw notFoundError;
-      }
-
-      await BucketListModel.delete(id);
+      await this.validateBucketListExists(id);
+      await BucketListModel.delete(id, userId);
       return true;
     } catch (error) {
       throw handleError(error as Error);
     }
   }
 
-  static async hardDeleteBucketList(id: string) {
+  static async hardDeleteBucketList(id: string, userId: string) {
     try {
-      const existingBucketList = await this.getBucketListById(id);
-      if (!existingBucketList) {
-        const notFoundError = new Error('Bucket List 不存在');
-        notFoundError.name = 'NotFoundError';
-        throw notFoundError;
-      }
-
-      await BucketListModel.hardDelete(id);
+      await this.validateBucketListExists(id);
+      await BucketListModel.hardDelete(id, userId);
       return true;
     } catch (error) {
       throw handleError(error as Error);
     }
   }
 
-  static async getBucketListById(id: string): Promise<TBucketListEntity | null> {
+  static async getBucketListById(id: string, userId: string): Promise<TBucketListEntity | null> {
     try {
-      return await BucketListModel.findById(id);
+      return await BucketListModel.findById(id, userId);
     } catch (error) {
       throw handleError(error as Error);
     }
@@ -76,33 +67,21 @@ export class BucketListService {
     }
   }
 
-  static async completeBucketList(id: string) {
+  static async completeBucketList(id: string, userId: string) {
     try {
-      const existingBucketList = await this.getBucketListById(id);
-      if (!existingBucketList) {
-        const notFoundError = new Error('Bucket List 不存在');
-        notFoundError.name = 'NotFoundError';
-        throw notFoundError;
-      }
-
-      await BucketListModel.update(id, { isCompleted: true });
-      return await this.getBucketListById(id);
+      await this.validateBucketListExists(id);
+      await BucketListModel.update(id, userId, { isCompleted: true });
+      return await this.getBucketListById(id, userId);
     } catch (error) {
       throw handleError(error as Error);
     }
   }
 
-  static async uncompleteBucketList(id: string) {
+  static async uncompleteBucketList(id: string, userId: string) {
     try {
-      const existingBucketList = await this.getBucketListById(id);
-      if (!existingBucketList) {
-        const notFoundError = new Error('Bucket List 不存在');
-        notFoundError.name = 'NotFoundError';
-        throw notFoundError;
-      }
-
-      await BucketListModel.update(id, { isCompleted: false });
-      return await this.getBucketListById(id);
+      await this.validateBucketListExists(id);
+      await BucketListModel.update(id, userId, { isCompleted: false });
+      return await this.getBucketListById(id, userId);
     } catch (error) {
       throw handleError(error as Error);
     }

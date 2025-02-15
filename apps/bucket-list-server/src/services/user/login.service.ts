@@ -1,13 +1,7 @@
-// import { v4 as uuidv4 } from 'uuid';
-import { getUuid } from '@/utils';
-import jwt from 'jsonwebtoken';
 import { LoginModel } from './login.model';
 import { TUserEntity } from 'bucket-list-types';
 import { UserModel } from './model';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret';
-const ACCESS_TOKEN_EXPIRES_IN = '1h';
-const REFRESH_TOKEN_EXPIRES_IN_DAYS = 365;
+import { getUuid } from '@/utils';
 
 export interface LoginResponse {
   user: TUserEntity;
@@ -21,17 +15,10 @@ export interface TokenPair {
 }
 
 export class LoginService {
-  // 生成访问令牌
-  private static generateAccessToken(userId: string): string {
-    return jwt.sign({ userId }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
-  }
-
   // 生成刷新令牌
   private static async generateRefreshToken(userId: string): Promise<string> {
     const token = getUuid();
-    const expiredAt = new Date();
-    expiredAt.setDate(expiredAt.getDate() + REFRESH_TOKEN_EXPIRES_IN_DAYS);
-
+    const expiredAt = LoginModel.calculateRefreshTokenExpiry();
     await LoginModel.createRefreshToken(userId, token, expiredAt);
     return token;
   }
@@ -39,7 +26,7 @@ export class LoginService {
   // 生成令牌对
   private static async generateTokenPair(userId: string): Promise<TokenPair> {
     const [accessToken, refreshToken] = await Promise.all([
-      this.generateAccessToken(userId),
+      LoginModel.generateAccessToken(userId),
       this.generateRefreshToken(userId)
     ]);
 
@@ -49,7 +36,7 @@ export class LoginService {
   // 通过设备 UUID 登录
   static async loginWithDeviceUuid(deviceUuid: string): Promise<LoginResponse | null> {
     let user = await LoginModel.getUserByDeviceUuid(deviceUuid);
-    
+
     if (!user) {
       // 如果用户不存在，创建新用户
       const userId = await UserModel.create({
@@ -62,7 +49,7 @@ export class LoginService {
 
     await LoginModel.updateLastLoginAt(user.id);
     const tokens = await this.generateTokenPair(user.id);
-    
+
     return {
       user,
       ...tokens
@@ -78,7 +65,7 @@ export class LoginService {
     // }
 
     let user = await LoginModel.getUserByEmail(email);
-    
+
     if (!user) {
       // 如果用户不存在，创建新用户
       const userId = await UserModel.create({
@@ -91,7 +78,7 @@ export class LoginService {
 
     await LoginModel.updateLastLoginAt(user.id);
     const tokens = await this.generateTokenPair(user.id);
-    
+
     return {
       user,
       ...tokens
@@ -105,7 +92,7 @@ export class LoginService {
       return null;
     }
 
-    return this.generateAccessToken(tokenInfo.userId);
+    return LoginModel.generateAccessToken(tokenInfo.userId);
   }
 
   // 登出
@@ -114,12 +101,16 @@ export class LoginService {
   }
 
   // 验证访问令牌
-  static verifyAccessToken(accessToken: string): { userId: string } | null {
-    try {
-      const decoded = jwt.verify(accessToken, JWT_SECRET) as { userId: string };
-      return decoded;
-    } catch (error) {
+  static getUserIdFromAccessToken(accessToken: string): { userId: string } | null {
+    return LoginModel.verifyAccessToken(accessToken);
+  }
+  // 通过刷新令牌获取用户信息
+  static async getUserByRefreshToken(refreshToken: string): Promise<TUserEntity | null> {
+    const tokenInfo = await LoginModel.getRefreshTokenByToken(refreshToken);
+    if (!tokenInfo) {
       return null;
     }
+
+    return UserModel.findById(tokenInfo.userId);
   }
 }

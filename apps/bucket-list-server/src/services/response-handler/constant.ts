@@ -1,6 +1,7 @@
 // 模块枚举
 export enum ModuleEnum {
   USER = 'USER',           // 用户模块
+  LOGIN = 'LOGIN',
   BUCKET_LIST = 'BUCKET_LIST', // 清单模块
   STEP = 'STEP',           // 步骤模块
   COMMENT = 'COMMENT',     // 评论模块
