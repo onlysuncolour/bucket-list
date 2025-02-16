@@ -5,7 +5,9 @@
     "paths": {
       "@/*": [
         "./*"
-      ]
+      ],
+      "bucket-list-types": ["../../packages/bucket-list-types/src"]
+
     }
   },
   "include": [
