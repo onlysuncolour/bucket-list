@@ -27,7 +27,6 @@ export interface TStep {
   bucketListId: string;
   parentStepId?: string;
   category?: string;
-  tags?: string[];
   createdAt: Date;
   updatedAt: Date;
   creatorId: string;

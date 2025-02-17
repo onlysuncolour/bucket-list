@@ -7,7 +7,7 @@ export default {
   bucketList: {
     prefix: EPrefix.API,
     path: '/bucket-list',
-    getList: {
+    getAllBucketList: {
       method: 'GET',
       path: ''
     },
@@ -22,6 +22,42 @@ export default {
     deleteBucketList: {
       method: 'DELETE',
       path: ''
+    },
+    getBucketListById: {
+      method: 'GET',
+      path: '/{id}',
+    },
+    completeBucketList: {
+      method: 'PUT',
+      path: '/{id}/complete'
+    },
+    uncompleteBucketList: {
+      method: 'PUT',
+      path: '/{id}/uncomplete'
+    }
+  },
+  steps: {
+    prefix: EPrefix.API,
+    path: '/bucket-list/{bId}/steps',
+    createSteps: {
+      method: 'POST',
+      path: ''
+    },
+    updateSteps: {
+      method: 'PUT',
+      path: ''
+    },
+    removeSteps: {
+      method: 'PUT',
+      path: ''
+    },
+    completeStep: {
+      method: 'PUT',
+      path: '/complete'
+    },
+    uncompleteStep: {
+      method: 'PUT',
+      path: '/uncomplete'
     }
   },
   user: {

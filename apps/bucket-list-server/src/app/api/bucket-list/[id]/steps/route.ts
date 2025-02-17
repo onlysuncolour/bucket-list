@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 
   const body = await request.json();
-  const { stepId, ...updateData } = body;
+  const { id: stepId, ...updateData } = body;
 
   if (!stepId) {
     return NextResponse.json({ code: 400, message: '步骤ID不能为空' });

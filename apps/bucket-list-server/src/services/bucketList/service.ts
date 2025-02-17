@@ -106,7 +106,7 @@ export class BucketListService {
     }
   }
 
-  static async addSteps(parentId: string, userId: string, steps: Omit<TStepEntity, 'id' | 'createdAt' | 'updatedAt' | 'bucketListId' | 'parentStepId'>[]) {
+  static async addSteps(parentId: string, userId: string, steps: Omit<TStepEntity, 'id' | 'createdAt' | 'updatedAt' | 'bucketListId'>[]) {
     try {
       await BucketListModel.addSteps(parentId, userId, steps);
       return true;
