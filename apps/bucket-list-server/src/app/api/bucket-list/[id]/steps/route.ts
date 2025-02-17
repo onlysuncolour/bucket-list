@@ -1,35 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BucketListService } from '@/services/bucketList/service';
-import { LoginService } from '@/services/user/login.service';
 import { handleResponse } from '@/services/response-handler';
 import { ModuleEnum, OperationEnum } from '@/services/response-handler/constant';
 import { getUuid, getUserIdFromRequest } from '@/utils';
 
-// GET /api/bucket-list
-export async function GET(request: NextRequest) {
-  const requestId = getUuid();
-  const userId = getUserIdFromRequest(request);
-  
-  if (!userId) {
-    return NextResponse.json({ code: 401, message: '未授权' });
-  }
-
-  const response = await handleResponse({
-    promise: BucketListService.getBucketListsByCreatorId(userId),
-    userId,
-    requestId,
-    requestInfo: {
-      url: request.url
-    },
-    module: ModuleEnum.BUCKET_LIST,
-    operation: OperationEnum.QUERY_LIST
-  });
-
-  return NextResponse.json(response);
-}
-
-// POST /api/bucket-list
-export async function POST(request: NextRequest) {
+// POST /api/bucket-list/[id]/steps
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const requestId = getUuid();
   const userId = getUserIdFromRequest(request);
   
@@ -38,12 +14,10 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
+  const { steps } = body;
 
   const response = await handleResponse({
-    promise: BucketListService.createBucketList({
-      ...body,
-      creatorId: userId
-    }, userId),
+    promise: BucketListService.addSteps(params.id, userId, steps),
     userId,
     requestId,
     requestInfo: {
@@ -57,8 +31,8 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(response);
 }
 
-// PUT /api/bucket-list
-export async function PUT(request: NextRequest) {
+// PUT /api/bucket-list/[id]/steps
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const requestId = getUuid();
   const userId = getUserIdFromRequest(request);
   
@@ -67,14 +41,14 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { id, ...updateData } = body;
+  const { stepId, ...updateData } = body;
 
-  if (!id) {
-    return NextResponse.json({ code: 400, message: '清单ID不能为空' });
+  if (!stepId) {
+    return NextResponse.json({ code: 400, message: '步骤ID不能为空' });
   }
 
   const response = await handleResponse({
-    promise: BucketListService.updateBucketList(id, userId, updateData),
+    promise: BucketListService.updateStep(stepId, userId, updateData),
     userId,
     requestId,
     requestInfo: {
@@ -88,8 +62,8 @@ export async function PUT(request: NextRequest) {
   return NextResponse.json(response);
 }
 
-// DELETE /api/bucket-list
-export async function DELETE(request: NextRequest) {
+// DELETE /api/bucket-list/[id]/steps
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const requestId = getUuid();
   const userId = getUserIdFromRequest(request);
   
@@ -98,14 +72,14 @@ export async function DELETE(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { id } = body;
+  const { stepIds } = body;
 
-  if (!id) {
-    return NextResponse.json({ code: 400, message: '清单ID不能为空' });
+  if (!stepIds) {
+    return NextResponse.json({ code: 400, message: '步骤ID不能为空' });
   }
 
   const response = await handleResponse({
-    promise: BucketListService.deleteBucketList(id, userId),
+    promise: BucketListService.removeSteps(stepIds, userId),
     userId,
     requestId,
     requestInfo: {

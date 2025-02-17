@@ -1,4 +1,4 @@
-import { TBucketListEntity } from 'bucket-list-types';
+import { TBucketListEntity, TStepEntity } from 'bucket-list-types';
 import { BucketListModel } from './model';
 import { handleError } from '../error-handler';
 
@@ -82,6 +82,43 @@ export class BucketListService {
       await this.validateBucketListExists(id);
       await BucketListModel.update(id, userId, { isCompleted: false });
       return await this.getBucketListById(id, userId);
+    } catch (error) {
+      throw handleError(error as Error);
+    }
+  }
+
+  // 步骤管理相关服务
+  static async updateStep(stepId: string, userId: string, data: Partial<TStepEntity>) {
+    try {
+      await BucketListModel.updateStep(stepId, userId, data);
+      return true;
+    } catch (error) {
+      throw handleError(error as Error);
+    }
+  }
+
+  static async removeSteps(stepIds: string | string[], userId: string) {
+    try {
+      await BucketListModel.removeSteps(stepIds, userId);
+      return true;
+    } catch (error) {
+      throw handleError(error as Error);
+    }
+  }
+
+  static async addSteps(parentId: string, userId: string, steps: Omit<TStepEntity, 'id' | 'createdAt' | 'updatedAt' | 'bucketListId' | 'parentStepId'>[]) {
+    try {
+      await BucketListModel.addSteps(parentId, userId, steps);
+      return true;
+    } catch (error) {
+      throw handleError(error as Error);
+    }
+  }
+
+  static async completeStep(stepId: string, userId: string, isCompleted: boolean = true) {
+    try {
+      await BucketListModel.completeStep(stepId, userId, isCompleted);
+      return true;
     } catch (error) {
       throw handleError(error as Error);
     }

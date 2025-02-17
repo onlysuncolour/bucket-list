@@ -43,7 +43,205 @@ export class BucketListModel {
     }
   }
 
+  static async updateStep(stepId: string, userId: string, data: Partial<TStepEntity>) {
+    // 验证用户访问权限
+    const step = await handleSelectData({
+      table: 'steps',
+      where: [
+        { key: 'id', value: stepId, type: '=' },
+        { key: 'is_deleted', value: false, type: '=' },
+      ],
+      limit: 1,
+    });
+
+    if (!step || step.length === 0) {
+      const error = new Error('步骤不存在');
+      error.name = 'NotFoundError';
+      throw error;
+    }
+
+    const { hasAccess } = await this.validateUserAccess(step[0].bucket_list_id, userId);
+    if (!hasAccess) {
+      const error = new Error('没有权限修改此步骤');
+      error.name = 'PermissionError';
+      throw error;
+    }
+
+    const updateData: Partial<TStepModel> = {};
+    
+    if (data.title) updateData.title = data.title;
+    if (data.description) updateData.description = data.description;
+    if (data.category) updateData.category = data.category;
+    if (data.tags) updateData.tags = data.tags;
+    if (data.isDeleted !== undefined) updateData.is_deleted = data.isDeleted;
+    if (data.isCompleted !== undefined) updateData.is_completed = data.isCompleted;
+
+    await handleUpdateData({
+      table: 'steps',
+      fields: Object.keys(updateData),
+      data: [updateData],
+      where: [{ key: 'id', value: stepId, type: '=' }],
+      limit: 1,
+    });
+  }
+
+  static async removeSteps(stepIds: string | string[], userId: string) {
+    const ids = Array.isArray(stepIds) ? stepIds : [stepIds];
+    
+    // 获取所有要删除的步骤信息
+    const steps = await handleSelectData({
+      table: 'steps',
+      where: [
+        { key: 'id', value: ids, type: 'IN' },
+        { key: 'is_deleted', value: false, type: '=' },
+      ],
+    });
+
+    if (!steps || steps.length === 0) {
+      return;
+    }
+
+    // 验证用户权限
+    const bucketListId = steps[0].bucket_list_id;
+    const { hasAccess } = await this.validateUserAccess(bucketListId, userId);
+    if (!hasAccess) {
+      const error = new Error('没有权限删除这些步骤');
+      error.name = 'PermissionError';
+      throw error;
+    }
+
+    // 递归获取所有子步骤
+    const allStepIds = new Set(ids);
+    let currentIds = ids;
+
+    while (currentIds.length > 0) {
+      const subSteps = await handleSelectData({
+        table: 'steps',
+        where: [
+          { key: 'parent_step_id', value: currentIds, type: 'IN' },
+          { key: 'is_deleted', value: false, type: '=' },
+        ],
+      });
+
+      if (!subSteps || subSteps.length === 0) {
+        break;
+      }
+
+      currentIds = subSteps.map(step => step.id);
+      currentIds.forEach(id => allStepIds.add(id));
+    }
+
+    // 标记所有步骤为已删除
+    await handleUpdateData({
+      table: 'steps',
+      fields: ['is_deleted'],
+      data: [{ is_deleted: true }],
+      where: [{ key: 'id', value: Array.from(allStepIds), type: 'IN' }],
+    });
+  }
+
+  static async addSteps(parentId: string, userId: string, steps: Omit<TStepEntity, 'id' | 'createdAt' | 'updatedAt' | 'bucketListId' | 'parentStepId'>[]) {
+    // 判断父节点类型（bucket list 或 step）
+    let bucketListId: string;
+    let parentStepId: string | undefined;
+
+    const parentStep = await handleSelectData({
+      table: 'steps',
+      where: [
+        { key: 'id', value: parentId, type: '=' },
+        { key: 'is_deleted', value: false, type: '=' },
+      ],
+      limit: 1,
+    });
+
+    if (parentStep && parentStep.length > 0) {
+      // 父节点是步骤
+      bucketListId = parentStep[0].bucket_list_id;
+      parentStepId = parentId;
+    } else {
+      // 父节点是 bucket list
+      bucketListId = parentId;
+      const bucketListExists = await this.validateExist(bucketListId);
+      if (!bucketListExists) {
+        const error = new Error('遗愿清单不存在');
+        error.name = 'NotFoundError';
+        throw error;
+      }
+    }
+
+    // 验证用户权限
+    const { hasAccess } = await this.validateUserAccess(bucketListId, userId);
+    if (!hasAccess) {
+      const error = new Error('没有权限添加步骤');
+      error.name = 'PermissionError';
+      throw error;
+    }
+
+    // 创建新步骤
+    for (const step of steps) {
+      const stepId = crypto.randomUUID();
+      await handleCreateOrUpdateData({
+        table: 'steps',
+        fields: ['id', 'title', 'description', 'bucket_list_id', 'parent_step_id', 'category', 'tags', 'creator_id', 'is_deleted', 'is_completed'],
+        data: [{
+          id: stepId,
+          title: step.title,
+          description: step.description,
+          bucket_list_id: bucketListId,
+          parent_step_id: parentStepId,
+          category: step.category,
+          tags: step.tags,
+          creator_id: userId,
+          is_deleted: false,
+          is_completed: step.isCompleted || false,
+        }],
+        uniqueKeys: ['id'],
+      });
+
+      // 递归处理子步骤
+      if (step.subSteps && step.subSteps.length > 0) {
+        await this.addSteps(stepId, userId, step.subSteps);
+      }
+    }
+  }
+
+  static async completeStep(stepId: string, userId: string, isCompleted: boolean = true) {
+    // 验证步骤存在
+    const step = await handleSelectData({
+      table: 'steps',
+      where: [
+        { key: 'id', value: stepId, type: '=' },
+        { key: 'is_deleted', value: false, type: '=' },
+      ],
+      limit: 1,
+    });
+
+    if (!step || step.length === 0) {
+      const error = new Error('步骤不存在');
+      error.name = 'NotFoundError';
+      throw error;
+    }
+
+    // 验证用户权限
+    const { hasAccess } = await this.validateUserAccess(step[0].bucket_list_id, userId);
+    if (!hasAccess) {
+      const error = new Error('没有权限修改此步骤');
+      error.name = 'PermissionError';
+      throw error;
+    }
+
+    // 更新步骤完成状态
+    await handleUpdateData({
+      table: 'steps',
+      fields: ['is_completed'],
+      data: [{ is_completed: isCompleted }],
+      where: [{ key: 'id', value: stepId, type: '=' }],
+      limit: 1,
+    });
+  }
+
   private static async updateSteps(bucketListId: string, steps: Omit<TStepEntity, 'createdAt' | 'updatedAt' | 'bucketListId'>[] = []) {
+    // 这个方法暂时没用了。
     // 获取当前所有的步骤
     const currentSteps = await handleSelectData({
       table: 'steps',
@@ -176,9 +374,10 @@ export class BucketListModel {
     }
 
     // 处理步骤更新
-    if (data.steps) {
-      await this.updateSteps(id, data.steps);
-    }
+    // if (data.steps) {
+    //   await this.updateSteps(id, data.steps);
+    // }
+    // 不再在此处更新步骤，步骤的更新应该由专门的步骤管理方法处理
   }
 
   static async delete(id: string, userId: string) {

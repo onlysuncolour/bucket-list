@@ -7,6 +7,7 @@ interface RequestConfig extends AxiosRequestConfig {
   prefix?: string;
   isStream?: boolean;
   noAccessToken?: boolean;
+  param?: Record<string, string | number>; // 路径参数，用于替换URL中的模板变量
 }
 
 interface TokenStorage {
@@ -196,12 +197,25 @@ class Request {
     throw serverError;
   }
 
+  /**
+   * 发起HTTP请求
+   * @param path 请求路径，支持路径参数模板，如 '/users/{id}'
+   * @param prefix 请求路径前缀
+   * @param method HTTP请求方法
+   * @param payload 请求体数据
+   * @param query 查询参数
+   * @param param 路径参数，用于替换URL中的模板变量，如 { id: 123 }
+   * @param isStream 是否为流式请求
+   * @param noAccessToken 是否不需要携带访问令牌
+   * @returns 请求响应数据
+   */
   async request<T = any>({
     path,
     prefix = '',
     method = 'GET',
     payload,
     query,
+    param,
     isStream = false,
     noAccessToken = false,
     ...config
@@ -211,10 +225,23 @@ class Request {
     method?: string;
     payload?: any;
     query?: Record<string, any>;
+    param?: Record<string, string | number>;
     isStream?: boolean;
     noAccessToken?: boolean;
   } & Omit<AxiosRequestConfig, 'url' | 'method' | 'data' | 'params'>): Promise<T> {
-    const url = `${prefix}${path}`;
+    // 处理路径参数
+    let processedPath = path;
+    if (param) {
+      processedPath = path.replace(/\{([^}]+)\}/g, (match, key) => {
+        const value = param[key];
+        if (value === undefined) {
+          throw new Error(`请求失败，缺少参数！`);
+        }
+        return String(value);
+      });
+    }
+
+    const url = `${prefix}${processedPath}`;
     const requestConfig: RequestConfig = {
       ...config,
       url,
