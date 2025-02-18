@@ -9,7 +9,9 @@ export class UserModel {
     const now = new Date();
     await handleCreateOrUpdateData({
       table: TABLE_NAME,
-      fields: ['id', 'display_name', 'email', 'avatar_url', 'device_uuid', 'apple_id', 'google_id', 'phone_number', 'wechat_id', 'created_at', 'last_login_at', 'is_deleted'],
+      fields: ['id', 'display_name', 'email', 'avatar_url', 'device_uuid', 'apple_id', 'google_id', 'phone_number', 'wechat_id', 
+        'created_at',
+        'last_login_at', 'is_deleted'],
       data: [{
         id,
         display_name: data.display_name,
@@ -22,7 +24,7 @@ export class UserModel {
         wechat_id: data.wechat_id,
         created_at: now,
         last_login_at: now,
-        is_deleted: false,
+        is_deleted: 0,
       }],
       uniqueKeys: ['id', 'email'],
     });
@@ -33,7 +35,7 @@ export class UserModel {
     await handleUpdateData({
       table: TABLE_NAME,
       fields: Object.keys(data),
-      data: [data],
+      data: data,
       where: [{ key: 'id', value: id, type: '=' }],
       limit: 1,
     });
@@ -43,7 +45,7 @@ export class UserModel {
     await handleUpdateData({
       table: TABLE_NAME,
       fields: ['is_deleted'],
-      data: [{ is_deleted: true }],
+      data: { is_deleted: true },
       where: [{ key: 'id', value: id, type: '=' }],
       limit: 1,
     });

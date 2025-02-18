@@ -114,7 +114,10 @@ export async function handleInsertData({
   data: { [key: string]: any }[]
 }) {
   const sql = `INSERT INTO ${table} (${fields.join(',')}) VALUES ${data.map(() => `(${fields.map(() => '?').join(',')})`).join(',')}`;
-  const values = data.map((item) => fields.map((field) => item[field]));
+  let values = data.map((item) => fields.map((field) => item[field]));
+  if (values.length === 1) {
+    values = values[0]
+  }
   const result = (await dbExecute(sql, values))?.[0] as ResultSetHeader;
   return result;
 }
@@ -128,7 +131,7 @@ export async function handleUpdateData({
 }: {
   table: string,
   fields: string[],
-  data: { [key: string]: any }[]
+  data: { [key: string]: any }
   where: TDbWhere[]
   limit?: number,
 }) {
@@ -143,7 +146,7 @@ export async function handleUpdateData({
     sql += ` LIMIT ${limit}`;
   }
   sql += ';';
-  const values = [...data.map((item) => fields.map((field) => item[field])), ...whereValues];
+  const values = [...fields.map((field) => data[field]), ...whereValues];
   const result = (await dbExecute(sql, values))?.[0] as ResultSetHeader;
   return result;
 }
@@ -159,16 +162,18 @@ export async function handleCreateOrUpdateData({
   data: { [key: string]: any }[]
   uniqueKeys: string[]
 }) {
-  const sql = `INSERT INTO ${table}
-    (${fields.join(',')})
-    VALUES ${data.map(() => `(${fields.map(() => '?').join(',')})`).join(',')}
-    ON DUPLICATE KEY UPDATE
-    ${fields.filter(field => !uniqueKeys.includes(field)).map(field => `${field} = VALUES(${field})`).join(',')}
-    ;`;
-  const values = data.map((item) => fields.map((field) => item[field]));
+  const sql = `INSERT INTO ${table}` +
+    ` (${fields.join(',')}) ` +
+    ` VALUES ${data.map(() => `(${fields.map(() => '?').join(',')})`).join(',')} ` +
+    ` ON DUPLICATE KEY UPDATE ` + 
+    `${fields.filter(field => !uniqueKeys.includes(field)).map(field => `${field} = VALUES(${field})`).join(',')}` +
+    `;`;
+  let values = data.map((item) => fields.map((field) => item[field] !== undefined ? item[field] : null));
+  if (values.length === 1) {
+    values = values[0]
+  }
   const result = (await dbExecute(sql, values))?.[0] as ResultSetHeader;
   return result;
-
 }
 
 export async function handleDeleteData({

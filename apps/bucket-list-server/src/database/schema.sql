@@ -1,3 +1,5 @@
+-- use bucket_list;
+
 -- 创建遗愿清单表
 CREATE TABLE IF NOT EXISTS bucket_lists (
   id VARCHAR(36) PRIMARY KEY,

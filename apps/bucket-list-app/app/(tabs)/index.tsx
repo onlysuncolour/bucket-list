@@ -20,12 +20,14 @@ export default function ListScreen() {
       const refreshToken = await request.getRefreshToken()
       
       if (!refreshToken) {
-        const deviceUuid = getUuid();
+        const deviceUuid = await request.getDeviceUuid();
+
         const loginResult = await fetchUserLogin({ deviceUuid });
         
         if (loginResult.refreshToken) {
           // await AsyncStorage.setItem('refreshToken', loginResult.refreshToken);
           await request.setRefreshToken(loginResult.refreshToken)
+          await request.setAccessToken(loginResult.accessToken)
         }
       }
       

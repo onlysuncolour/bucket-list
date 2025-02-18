@@ -1,5 +1,5 @@
-const EPrefix = {
-  API: '/api',
+export const EPrefix = {
+  API: 'api',
   API_V1: '/api/v1'
 }
 

@@ -79,7 +79,7 @@ export class BucketListModel {
     await handleUpdateData({
       table: 'steps',
       fields: Object.keys(updateData),
-      data: [updateData],
+      data: updateData,
       where: [{ key: 'id', value: stepId, type: '=' }],
       limit: 1,
     });
@@ -135,7 +135,7 @@ export class BucketListModel {
     await handleUpdateData({
       table: 'steps',
       fields: ['is_deleted'],
-      data: [{ is_deleted: true }],
+      data: { is_deleted: true },
       where: [{ key: 'id', value: Array.from(allStepIds), type: 'IN' }],
     });
   }
@@ -234,7 +234,7 @@ export class BucketListModel {
     await handleUpdateData({
       table: 'steps',
       fields: ['is_completed'],
-      data: [{ is_completed: isCompleted }],
+      data: { is_completed: isCompleted },
       where: [{ key: 'id', value: stepId, type: '=' }],
       limit: 1,
     });
@@ -256,7 +256,7 @@ export class BucketListModel {
       await handleUpdateData({
         table: 'steps',
         fields: ['is_deleted'],
-        data: [{ is_deleted: true }],
+        data: { is_deleted: true },
         where: [{ key: 'bucket_list_id', value: bucketListId, type: '=' }],
       });
     }
@@ -344,7 +344,7 @@ export class BucketListModel {
     await handleUpdateData({
       table: TABLE_NAME,
       fields: Object.keys(updateData),
-      data: [updateData],
+      data: updateData,
       where: [{ key: 'id', value: id, type: '=' }],
       limit: 1,
     });
@@ -391,7 +391,7 @@ export class BucketListModel {
     await handleUpdateData({
       table: TABLE_NAME,
       fields: ['is_deleted'],
-      data: [{ is_deleted: true }],
+      data: { is_deleted: true },
       where: [{ key: 'id', value: id, type: '=' }],
       limit: 1,
     });

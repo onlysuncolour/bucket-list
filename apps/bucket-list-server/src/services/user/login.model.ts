@@ -90,7 +90,7 @@ export class LoginModel {
     await handleUpdateData({
       table: 'refresh_tokens',
       fields: ['revoked'],
-      data: [{ revoked: true }],
+      data: { revoked: true },
       where: [{ key: 'token', value: token, type: '=' }]
     });
 
@@ -136,7 +136,7 @@ export class LoginModel {
     await handleUpdateData({
       table: 'users',
       fields: ['last_login_at'],
-      data: [{ last_login_at: new Date() }],
+      data: { last_login_at: new Date() },
       where: [{ key: 'id', value: userId, type: '=' }]
     });
   }

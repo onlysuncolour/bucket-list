@@ -2,6 +2,8 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { TServerResponse } from 'bucket-list-types';
+import { getUuid } from '@/utils';
+import { EPrefix } from './meta';
 
 interface RequestConfig extends AxiosRequestConfig {
   prefix?: string;
@@ -56,7 +58,7 @@ class Request {
 
   constructor() {
     this.instance = axios.create({
-      baseURL: process.env.API_HOST,
+      baseURL: process.env.EXPO_PUBLIC_API_HOST,
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json'
@@ -66,12 +68,29 @@ class Request {
     this.setupInterceptors();
   }
 
+  private isTokenExpired(token: string): boolean {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
+      return payload.exp * 1000 < Date.now();
+    } catch {
+      return true;
+    }
+  }
+
   private setupInterceptors() {
     // 请求拦截器
     this.instance.interceptors.request.use(
       async (config) => {
         if (!(config as RequestConfig).noAccessToken) {
-          const token = await this.getAccessToken();
+          let token = await this.getAccessToken();
+          
+          // 如果没有token或token过期，尝试刷新
+          if (!token || this.isTokenExpired(token)) {
+            token = await this.refreshToken();
+          }
+
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
           }
@@ -123,6 +142,19 @@ class Request {
     );
   }
 
+  async getDeviceUuid(): Promise<string> {
+    let deviceUuid = await tokenStorage.getItem('deviceUuid');
+    if (!deviceUuid) {
+      deviceUuid = getUuid()
+      this.setDeviceUuid(deviceUuid);
+    }
+    return deviceUuid
+  }
+
+  async setDeviceUuid(deviceUuid: string): Promise<void> {
+    await tokenStorage.setItem('deviceUuid', deviceUuid);
+  }
+
   private async getAccessToken(): Promise<string | null> {
     return tokenStorage.getItem('accessToken');
   }
@@ -151,8 +183,8 @@ class Request {
     if (!refreshToken) return null;
 
     try {
-      const response = await this.instance.post('/refresh', { refreshToken }, { noAccessToken: true } as RequestConfig);
-      const { accessToken } = response.data;
+      const response = await this.instance.post(EPrefix.API +'/refresh', { refreshToken }, { noAccessToken: true } as RequestConfig);
+      const accessToken = response.data.data;
       await this.setAccessToken(accessToken);
       return accessToken;
     } catch (error) {

@@ -19,16 +19,22 @@ function getConnection() {
 
 async function dbExecute(sql: string, values: any[] = [], count = 0) {
   const connection = await getConnection();
+  console.log({
+    sql, values
+  })
   try {
-    const result = await connection.execute(sql, values.map(v => (v ? v : null)));
+    const result = await connection.execute(sql, values);
     connection.destroy();
     return result;
   } catch (error) {
+    console.log({
+      sql, values, error
+    })
     try {
       connection.destroy();
     } catch (_) {}
     if (count > 3) {
-      throw { message: '数据库更新、查询失败，请重试 '};
+      throw { message: '数据库更新、查询失败，请重试!', stackMessage: sql};
     }
     return dbExecute(sql, values, count + 1);
   }
