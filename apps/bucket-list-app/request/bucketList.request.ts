@@ -1,6 +1,6 @@
 import {request} from './request' ;
 import meta from './meta';
-import { TBucketList, TStep } from 'bucket-list-types';
+import { TBucketList, TBucketListBrief, TStep } from 'bucket-list-types';
 const {
   prefix,
   path,
@@ -23,7 +23,7 @@ const {
   uncompleteStep,
 } = meta.steps
 
-export function fetchAllBucketList():Promise<TBucketList[]> {
+export function fetchAllBucketList():Promise<TBucketListBrief[]> {
   return request.request({
     prefix: `${prefix}${path}`,
     path: getAllBucketList.path,

@@ -1,4 +1,4 @@
-import { TBucketListEntity, TBucketListModel, TBucketListTagEntity, TBucketListTagModel, TStepEntity, TStepModel } from 'bucket-list-types';
+import { TBucketListBriefEntity, TBucketListEntity, TBucketListModel, TBucketListTagEntity, TBucketListTagModel, TStepEntity, TStepModel } from 'bucket-list-types';
 import { handleCreateOrUpdateData, handleDeleteData, handleSelectData, handleUpdateData } from '../db/db.helper.service';
 
 const TABLE_NAME = 'bucket_lists';
@@ -300,7 +300,7 @@ export class BucketListModel {
 
     await handleCreateOrUpdateData({
       table: TABLE_NAME,
-      fields: ['id', 'title', 'description', 'category', 'creator_id', 'is_deleted', 'is_completed'],
+      fields: ['id', 'title', 'description', 'category', 'creator_id', 'is_deleted', 'is_completed', 'step_count', 'step_complete_count'],
       data: [{
         id,
         title: data.title,
@@ -309,6 +309,8 @@ export class BucketListModel {
         creator_id: data.creatorId,
         is_deleted: data.isDeleted,
         is_completed: data.isCompleted,
+        step_count: data.stepCount || 0,
+        step_complete_count: data.stepCompleteCount || 0,
       }],
       uniqueKeys: ['id'],
     });
@@ -340,6 +342,8 @@ export class BucketListModel {
     if (data.creatorId) updateData.creator_id = data.creatorId;
     if (data.isDeleted !== undefined) updateData.is_deleted = data.isDeleted;
     if (data.isCompleted !== undefined) updateData.is_completed = data.isCompleted;
+    if (data.stepCount !== undefined) updateData.step_count = data.stepCount;
+    if (data.stepCompleteCount !== undefined) updateData.step_complete_count = data.stepCompleteCount;
 
     await handleUpdateData({
       table: TABLE_NAME,
@@ -517,7 +521,7 @@ export class BucketListModel {
     return bucketList;
   }
 
-  static async findByCreatorId(creatorId: string): Promise<TBucketListEntity[]> {
+  static async findByCreatorId(creatorId: string): Promise<TBucketListBriefEntity[]> {
     // 1. 查询 bucket lists 基础信息
     const bucketListsResult = await handleSelectData({
       table: TABLE_NAME,
@@ -573,38 +577,38 @@ export class BucketListModel {
       }
     });
 
-    // 按 bucket_list_id 分组处理步骤数据
-    const stepsMap = new Map<string, Map<string, TStepEntity>>();
-    bucketListIds.forEach(id => stepsMap.set(id, new Map<string, TStepEntity>()));
+    // // 按 bucket_list_id 分组处理步骤数据
+    // const stepsMap = new Map<string, Map<string, TStepEntity>>();
+    // bucketListIds.forEach(id => stepsMap.set(id, new Map<string, TStepEntity>()));
 
-    // 处理步骤数据
-    stepsResult.forEach(row => {
-      const bucketStepsMap = stepsMap.get(row.bucket_list_id);
-      if (bucketStepsMap) {
-        const step = this.parseToStepEntity(row);
-        bucketStepsMap.set(row.id, step);
-      }
-    });
+    // // 处理步骤数据
+    // stepsResult.forEach(row => {
+    //   const bucketStepsMap = stepsMap.get(row.bucket_list_id);
+    //   if (bucketStepsMap) {
+    //     const step = this.parseToStepEntity(row);
+    //     bucketStepsMap.set(row.id, step);
+    //   }
+    // });
 
-    // 处理每个 bucket list 的步骤层级关系
-    for (const [bucketListId, bucketStepsMap] of stepsMap) {
-      const steps = Array.from(bucketStepsMap.values());
-      steps.forEach(step => {
-        if (step.parentStepId) {
-          const parentStep = bucketStepsMap.get(step.parentStepId);
-          if (parentStep) {
-            parentStep.subSteps = parentStep.subSteps || [];
-            parentStep.subSteps.push(step);
-          }
-        }
-      });
+    // // 处理每个 bucket list 的步骤层级关系
+    // for (const [bucketListId, bucketStepsMap] of stepsMap) {
+    //   const steps = Array.from(bucketStepsMap.values());
+    //   steps.forEach(step => {
+    //     if (step.parentStepId) {
+    //       const parentStep = bucketStepsMap.get(step.parentStepId);
+    //       if (parentStep) {
+    //         parentStep.subSteps = parentStep.subSteps || [];
+    //         parentStep.subSteps.push(step);
+    //       }
+    //     }
+    //   });
       
-      // 只设置顶层步骤
-      const bucketList = bucketListMap.get(bucketListId);
-      if (bucketList) {
-        bucketList.steps = steps.filter(step => !step.parentStepId);
-      }
-    }
+    //   // 只设置顶层步骤
+    //   const bucketList = bucketListMap.get(bucketListId);
+    //   if (bucketList) {
+    //     bucketList.steps = steps.filter(step => !step.parentStepId);
+    //   }
+    // }
 
     return Array.from(bucketListMap.values());
   }
@@ -634,7 +638,9 @@ export class BucketListModel {
       isDeleted: data.is_deleted,
       isCompleted: data.is_completed,
       tags: [],
-      steps: []
+      steps: [],
+      stepCompleteCount: data.step_complete_count,
+      stepCount: data.step_count
     };
   }
 

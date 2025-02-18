@@ -10,7 +10,11 @@ export interface TBucketList {
   creatorId: string;
   isDeleted: boolean;
   isCompleted: boolean;
+  stepCount: number;
+  stepCompleteCount: number;
 }
+
+export interface TBucketListBrief extends Omit<TBucketList, 'steps'> {}
 
 export interface TBucketListTag {
   id: string;

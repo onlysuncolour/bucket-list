@@ -9,6 +9,8 @@ export interface TBucketListModel {
   creator_id: string;
   is_deleted: boolean;
   is_completed: boolean;
+  step_count: number;
+  step_complete_count: number;
 }
 
 export interface TBucketTagModel {
@@ -59,7 +61,7 @@ export interface TCommentModel {
 }
 
 // 业务层模型（驼峰命名）
-export interface TBucketListEntity extends Omit<TBucketListModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'is_completed'> {
+export interface TBucketListEntity extends Omit<TBucketListModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'is_completed' | 'step_count' | 'step_complete_count'> {
   createdAt: Date;
   updatedAt: Date;
   creatorId: string;
@@ -67,7 +69,11 @@ export interface TBucketListEntity extends Omit<TBucketListModel, 'created_at' |
   isCompleted: boolean;
   tags?: TBucketListTagEntity[];
   steps?: TStepEntity[];
+  stepCount: number
+  stepCompleteCount: number
 }
+
+export interface TBucketListBriefEntity extends Omit<TBucketListEntity, 'steps'> {}
 
 export interface TBucketListTagEntity extends Omit<TBucketListTagModel, 'bucket_list_id' | 'tag_id'> {
   bucketListId: string;

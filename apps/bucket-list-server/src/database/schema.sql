@@ -103,3 +103,7 @@ CREATE TABLE IF NOT EXISTS bucket_list_shares (
   FOREIGN KEY (creator_id) REFERENCES users(id),
   FOREIGN KEY (share_to_id) REFERENCES users(id)
 );
+
+ALTER TABLE bucket_lists
+ADD COLUMN step_count INT NOT NULL DEFAULT 0,
+ADD COLUMN completed_step_count INT NOT NULL DEFAULT 0;
