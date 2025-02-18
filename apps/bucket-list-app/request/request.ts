@@ -127,7 +127,7 @@ class Request {
     return tokenStorage.getItem('accessToken');
   }
 
-  private async getRefreshToken(): Promise<string | null> {
+  async getRefreshToken(): Promise<string | null> {
     return tokenStorage.getItem('refreshToken');
   }
 
