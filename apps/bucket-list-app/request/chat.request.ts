@@ -16,5 +16,6 @@ export function fetchModelChat(body: {
     method: chat.method,
     payload: body,
     isStream: true,
+    timeout: 10000000
   })
 }

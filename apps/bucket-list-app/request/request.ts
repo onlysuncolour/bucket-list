@@ -298,8 +298,15 @@ class Request {
 
     try {
       const response = await this.instance.request<TServerResponse<T>>(requestConfig);
+      console.log({
+        response
+      })
+      // 对流式请求的特殊处理
+      if (isStream) {
+        return response.data as T;
+      }
+      
       const serverResponse = response.data;
-
       if (serverResponse.code === 0) {
         return serverResponse.data as T;
       } else {
