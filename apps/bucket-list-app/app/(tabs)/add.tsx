@@ -1,8 +1,9 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Octicons from '@expo/vector-icons/Octicons';
 import { fetchModelChat } from '@/request/chat.request';
+import { completeJSON } from '@/utils';
 
 type TModelType = 'textModel' | 'reasonerModel';
 export default function AddScreen() {
@@ -10,41 +11,68 @@ export default function AddScreen() {
   const [loading, setLoading] = useState(false);
   const charactorPrompt = {
     role: 'user',
-    content: '你是一个日程规划大师以及任务梳理大师，你需要帮我规划梳理我要做的接下来的事情，要按照步骤给我，可以更细粒度的给我。只需要给我返回JSON格式的数据，不要其他任何内容。JSON格式是 [{content: "", steps: [{content: "", steps: []}]}]'
+    content: '你是一个日程规划大师以及任务梳理大师，你需要帮我规划梳理我要做的接下来的事情，要按照步骤给我，可以更细粒度的给我。只需要给我返回JSON格式的数据，不要其他任何内容。JSON格式是 {steps: [{content: "", steps: []}]}'
   }
-  const modelType: TModelType = 'textModel'
+  const modelType: TModelType = 'textModel';
+
+  const [tempText, setTempText] = useState('');
+
+  const tempSteps = useMemo(() => {
+    if (!tempText) return null;
+    try {
+      const steps = completeJSON(tempText)
+      return steps
+    } catch (error) {
+      return null
+    }
+  }, [tempText])
 
   const handleSendRequest = async () => {
     if (!title.trim()) return;
     setLoading(true);
     try {
-      console.log(233)
-      const response = await fetchModelChat({
+      const request = fetchModelChat({
         messages: [charactorPrompt, {
           role: 'user',
           content: title
         }],
         modelType,
       })
-      console.log(556)
 
-      const reader = response.body?.getReader();
-      if (!reader) return;
+      request.then(response => {
+        const reader = response.data.getReader();
+        const decoder = new TextDecoder();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const text = new TextDecoder().decode(value);
-        console.log('Received:', text);
-      }
+        function readStream() {
+          reader.read().then(({ done, value }: { done: boolean, value: AllowSharedBufferSource }) => {
+            if (done) {
+              setTempText('')
+              console.log('流式读取完成');
+              return;
+            }
+
+            // 处理数据块
+            const textChunk = decoder.decode(value);
+            setTempText(prevValue => prevValue + textChunk)
+            // console.log('收到数据:', textChunk);
+
+            // 继续读取
+            readStream();
+          }).catch((err: any) => {
+            console.error('读取失败:', err);
+          });
+        }
+
+        readStream();
+      })
+
     } catch (error) {
       console.error('Error:', error);
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
     <ThemedView style={styles.container}>
       <Text style={styles.title}>添加新的清单项</Text>
@@ -57,8 +85,8 @@ export default function AddScreen() {
           placeholderTextColor="#999"
           editable={!loading}
         />
-        <TouchableOpacity 
-          onPress={handleSendRequest} 
+        <TouchableOpacity
+          onPress={handleSendRequest}
           style={[styles.button, loading && styles.buttonDisabled]}
           disabled={loading}
         >

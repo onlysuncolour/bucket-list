@@ -260,7 +260,7 @@ class Request {
     param?: Record<string, string | number>;
     isStream?: boolean;
     noAccessToken?: boolean;
-  } & Omit<AxiosRequestConfig, 'url' | 'method' | 'data' | 'params'>): Promise<T> {
+  } & Omit<AxiosRequestConfig, 'url' | 'method' | 'data' | 'params'>): Promise<T | any> {
     // 处理路径参数
     let url = `${prefix}${path}`;
     if (param) {
@@ -294,18 +294,16 @@ class Request {
     // 处理流式请求
     if (isStream) {
       requestConfig.responseType = 'stream';
+      requestConfig.adapter = 'fetch';
     }
 
     try {
       const response = await this.instance.request<TServerResponse<T>>(requestConfig);
-      console.log({
-        response
-      })
+      
       // 对流式请求的特殊处理
       if (isStream) {
-        return response.data as T;
+        return response
       }
-      
       const serverResponse = response.data;
       if (serverResponse.code === 0) {
         return serverResponse.data as T;

@@ -1,4 +1,4 @@
-export * as completePartialJSON from './completeJson';
+export { completeJSON } from './completeJson';
 export {
   getUuid,
   getLowercaseUuid,

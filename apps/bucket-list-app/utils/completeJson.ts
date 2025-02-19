@@ -1,103 +1,79 @@
-type JsonSymbolStack = ('}' | ']' | '"')[];
+// prompt:
+// 帮我用typescript写一个补全JSON字符串并返回object的方法
+// 要实现以下的目标：
+// 1. 如果 key 不完整，或 key后面无值，则补全这个key，并且赋值null。这个情况只可能会发生在字符串最后。
+//     举例：'{..."na' =>  '{..."na":null', '{..."na"' => '{..."na": null', '{..."na":'  => '{..."na":null'
+// 2. 如果 value 不完整，则补全，如{"name": "b 补全成 {"name":"b},数值类型的直接使用，boolean、null 给补全
+// 3. 一定要补全所有的大括号、中括号等！
+// 4. 可能头会出现 ```JSON 尾会出现 ```,中间会出现很多 \n，结尾可能不完整，导致是个,
+// 5. 最后的结果一定是一个object/array
+// 6. 请记住，输入的不完整的字符串，是从 一个完整的json字符串（或用```包住的json），从头开始到中间或结尾截取的字符串。
 
-/**
- * 自动补全不完整的JSON字符串，使其成为合法JSON
- * @param partial 不完整的JSON输入
- * @returns 补全后的合法JSON字符串
- */
-export function completePartialJSON(partial: string): string {
-    // 第一阶段：自动闭合未关闭的符号（{}, [], ""）
-    const symbolCompleted = autoCloseSymbols(partial);
+export function completeJSON(input: string): object | Array<any> {
+    let str = preprocess(input);
+    str = completeKeyAndValue(str);
+    str = completeBrackets(str);
+    str = fixTrailingComma(str);
     
-    // 第二阶段：清理无效键值对
-    return cleanInvalidKeys(symbolCompleted);
+    return JSON.parse(str);
 }
 
-/**
- * 自动闭合未闭合的括号和引号
- */
-function autoCloseSymbols(str: string): string {
-    const stack: JsonSymbolStack = [];
-    let inString = false;
-    let escapeNext = false;
+function preprocess(s: string): string {
+    // 去除头尾的```和换行
+    return s.replace(/^```(json)?|```$/g, '')
+           .replace(/\n/g, ' ')
+           .trim();
+}
 
-    for (const char of str) {
-        if (escapeNext) {
-            escapeNext = false;
-            continue;
-        }
+function completeKeyAndValue(s: string): string {
+    // 处理未闭合的键
+    const keyRegex = /(?:{|,)\s*"([^"\\]*(\\.[^"\\]*)*)$/;
+    if (keyRegex.test(s)) {
+        s += '":null';
+    }
 
-        // 处理转义字符
-        if (char === '\\') {
-            escapeNext = true;
-            continue;
-        }
+    // 处理以冒号结尾的情况
+    const colonEndRegex = /:\s*$/;
+    if (colonEndRegex.test(s)) {
+        s += 'null';
+    }
 
-        // 处理字符串状态
-        if (char === '"') {
-            inString = !inString;
-            if (inString) {
-                stack.push('"');
-            } else {
+    // 处理未闭合的字符串值
+    const stringRegex = /(?<!\\)"([^"\\]*(\\.[^"\\]*)*)$/;
+    if ((s.match(/"/g) || []).length % 2 !== 0) {
+        s += '"';
+    }
+
+    // 补全布尔/null值
+    const partialValueMatch = s.match(/(true|false|null|tr?u?e?|fa?l?s?e?|nu?l?l?)$/);
+    if (partialValueMatch) {
+        const val = partialValueMatch[0];
+        if (val.startsWith('t')) s += 'rue'.slice(val.length);
+        else if (val.startsWith('f')) s += 'alse'.slice(val.length);
+        else if (val.startsWith('n')) s += 'ull'.slice(val.length);
+    }
+
+    return s;
+}
+
+function completeBrackets(s: string): string {
+    const stack: string[] = [];
+    const pairs: { [key: string]: string } = { '{': '}', '[': ']' };
+
+    for (const char of s) {
+        if (char === '{' || char === '[') {
+            stack.push(pairs[char]);
+        } else if (char === '}' || char === ']') {
+            if (stack[stack.length - 1] === char) {
                 stack.pop();
             }
-            continue;
-        }
-
-        if (!inString) {
-            // 处理对象/数组开闭
-            if (char === '{' || char === '[') {
-                stack.push(char === '{' ? '}' : ']');
-            } else if (char === '}' || char === ']') {
-                const expected = stack.pop();
-                if (char !== expected) {
-                    stack.push(expected!); // 忽略结构错误，继续处理
-                }
-            }
         }
     }
 
-    // 补全剩余未闭合符号
-    let completed = str;
-    while (stack.length > 0) {
-        completed += stack.pop();
-    }
-
-    return completed;
+    return s + stack.reverse().join('');
 }
 
-/**
- * 清理无效的键值对（不完整键名或缺失值）
- */
-function cleanInvalidKeys(str: string): string {
-    // 清理不完整键名（如 "na 未闭合）
-    const keyCleanerRegex = /([{,]\s*)"([a-zA-Z_]*?)"?(\s*:?)(\s*)([^"]*?)(\s*)([},]|$)/g;
-    let cleaned = str.replace(keyCleanerRegex, (match, lead, key, colonSpaces, _, value, tailSpaces, end) => {
-        // Case 1: 键名未闭合（如 "na 没有闭合引号）
-        if (!key || (colonSpaces.includes(':') && !value.trim())) {
-            return end ? `${lead}${end}` : '';
-        }
-        
-        // Case 2: 键完整但值为空（如 "key": ）
-        if (colonSpaces.includes(':') && !value.trim()) {
-            return `${lead}"${key}": null${tailSpaces}${end || ''}`;
-        }
-
-        return match;
-    });
-
-    // 补全未定义值为null（如 "key": unk）
-    const valueCleanerRegex = /([{,]\s*"([^"]+)"\s*:\s*)([^}\]][^,]*?)(\s*)([},]|$)/g;
-    cleaned = cleaned.replace(valueCleanerRegex, (match, prefix, _, value, space, end) => {
-        try {
-            // 尝试解析当前值是否合法
-            JSON.parse(value.trim());
-            return match;
-        } catch {
-            // 非法值时替换为null
-            return `${prefix}null${space}${end}`;
-        }
-    });
-
-    return cleaned;
+function fixTrailingComma(s: string): string {
+    // 移除对象/数组末尾的逗号
+    return s.replace(/,(?=\s*[}\]])/g, '');
 }
