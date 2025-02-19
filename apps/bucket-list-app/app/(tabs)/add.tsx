@@ -1,10 +1,58 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
+import { useState } from 'react';
+import Octicons from '@expo/vector-icons/Octicons';
+import { fetchModelChat } from '@/request/chat.request';
 
+type TModelType = 'textModel' | 'reasonerModel';
 export default function AddScreen() {
+  const [title, setTitle] = useState('');
+  const charactorPrompt = {
+    role: 'user',
+    content: '你是一个日程规划大师以及任务梳理大师，你需要帮我规划梳理我要做的接下来的事情，要按照步骤给我，可以更细粒度的给我。只需要给我返回JSON格式的数据，不要其他任何内容。JSON格式是 [{content: "", steps: [{content: "", steps: []}]}]'
+  }
+  const modelType: TModelType = 'textModel'
+
+  const handleSendRequest = async () => {
+    try {
+      const response = await fetchModelChat({
+        messages: [charactorPrompt, {
+          role: 'user',
+          content: title
+        }],
+        modelType
+      })
+
+      const reader = response.body?.getReader();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const text = new TextDecoder().decode(value);
+        console.log('Received:', text);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+  
   return (
     <ThemedView style={styles.container}>
       <Text style={styles.title}>添加新的清单项</Text>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="输入你想要完成的事情"
+          placeholderTextColor="#999"
+        />
+        <TouchableOpacity onPress={handleSendRequest} style={styles.button}>
+          <Octicons name="paper-airplane" size={24} color="#0a7ea4" />
+        </TouchableOpacity>
+      </View>
     </ThemedView>
   );
 }
@@ -19,4 +67,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
   },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8
+  },
+  input: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16
+  },
+  button: {
+    padding: 8,
+  }
 });
