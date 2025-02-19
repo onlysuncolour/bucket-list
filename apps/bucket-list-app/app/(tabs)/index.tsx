@@ -5,11 +5,10 @@ import { request } from '@/request/request'
 import { fetchUserLogin } from '@/request/user.request';
 import { fetchAllBucketList } from '@/request/bucketList.request';
 import { ThemedView } from '@/components/ThemedView';
-import { getUuid } from '@/utils';
-import { TBucketList } from 'bucket-list-types';
+import { TBucketListBrief } from 'bucket-list-types';
 
 export default function ListScreen() {
-  const [bucketList, setBucketList] = useState<TBucketList[]>([]);
+  const [bucketList, setBucketList] = useState<TBucketListBrief[]>([]);
 
   useEffect(() => {
     checkAuthAndFetchList();

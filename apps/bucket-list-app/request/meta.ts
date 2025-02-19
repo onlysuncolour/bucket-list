@@ -75,5 +75,14 @@ export default {
       path: '/refresh',
       method: 'POST',
     }
+  },
+  chat: {
+    prefix: EPrefix.API,
+    path: '/chat',
+    chat: {
+      path: '',
+      method: 'POST',
+      isStream: true
+    }
   }
 }

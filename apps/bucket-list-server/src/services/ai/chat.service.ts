@@ -17,19 +17,19 @@ export interface ChatCompletionOptions {
 export class ChatService {
   // TODO: 需要 OpenAI API 的具体接口类型定义
   static async streamChatCompletion(options: ChatCompletionOptions) {
-    const { messages, temperature = 0.7, model = 'gpt-3.5-turbo' } = options;
-
+    const { messages, temperature = 0.7, modelType = 'textModel' } = options;
+    const modelKey = modelType === 'textModel' ? process.env.CHAT_MODEL_NAME : process.env.REASONER_MODEL_NAME;
     try {
-      const response = await fetch('https://api.volcengine.com/v1/chat/completions', {
+      const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.VOLC_API_KEY}`
+          'Authorization': `Bearer ${process.env.MODEL_KEY}`
         },
         body: JSON.stringify({
           messages,
           temperature,
-          model,
+          model: modelKey,
           stream: true
         })
       });
