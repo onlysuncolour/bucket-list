@@ -38,6 +38,11 @@ export interface TStep {
   isCompleted: boolean;
 }
 
+export interface TStepInit {
+  title: string,
+  subSteps: TStepInit[]
+}
+
 export interface TComment {
   id: string;
   content: string;
