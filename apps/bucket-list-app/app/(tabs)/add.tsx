@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { useEffect, useMemo, useState } from 'react';
 import Octicons from '@expo/vector-icons/Octicons';
@@ -77,13 +77,13 @@ export default function AddScreen() {
           <Octicons name={loading ? "stop" : "paper-airplane"} size={24} color={loading ? "#ccc" : "#0a7ea4"} />
         </TouchableOpacity>
       </View>
-      {loading && <Text style={styles.loadingText}>正在生成任务清单...</Text>}
+      {/* {loading && <Text style={styles.loadingText}>正在生成任务清单...</Text>} */}
       {
-        tempSteps.length > 0 && <View>
+        tempSteps.length > 0 && <ScrollView style={styles.scrollContainer}>
           {
             tempSteps.map(step => <StepItem step={step} />)
           }
-        </View>
+        </ScrollView>
       }
     </ThemedView>
   );
@@ -123,6 +123,10 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#666',
     textAlign: 'center',
+    marginTop: 8
+  },
+  scrollContainer: {
+    flex: 1,
     marginTop: 8
   }
 });
