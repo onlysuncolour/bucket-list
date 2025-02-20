@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { TStep } from 'bucket-list-types';
+import { TStep, TStepInit } from 'bucket-list-types';
 
 interface StepItemProps {
-  step: TStep;
+  step: TStep | TStepInit;
   bucketListId?: string;
   onUpdate?: (stepId: string, title: string) => void;
   onComplete?: (stepId: string) => void;

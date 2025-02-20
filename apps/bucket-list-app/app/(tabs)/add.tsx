@@ -1,107 +1,61 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Octicons from '@expo/vector-icons/Octicons';
 import { fetchModelChat } from '@/request/chat.request';
-import { completeJSON } from '@/utils';
+import { completeJSON, handleChat, makeInitialSteps } from '@/utils';
 import { TStepInit } from 'bucket-list-types';
 import { useLatest } from 'ahooks';
-import 'abortcontroller-polyfill';
 import axios from 'axios';
+import { StepItem } from '@/components/StepItem';
 
-type TModelType = 'textModel' | 'reasonerModel';
+const defaultChatCb = (v: boolean) => {};
+
 export default function AddScreen() {
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
-  const charactorPrompt = {
-    role: 'user',
-    content: '你是一个日程规划大师以及任务梳理大师，你需要帮我规划梳理我要做的接下来的事情，要按照步骤给我，可以更细粒度的给我。只需要给我返回JSON格式的数据，不要其他任何内容。JSON格式是 {steps: [{title: "", steps: [{title: "", steps: []}]}]}'
-  }
-  const modelType: TModelType = 'textModel';
   const [tempText, setTempText] = useState('');
   const [steps, setSteps] = useState<any[]>([]);
   const [tempStepNode, setTempStepNode] = useState<any>([0]);
+  const [chatCb, setChatCb] = useState<{cb: (v: boolean) => void}>({cb: defaultChatCb});
 
-  const loadingLatestRef = useLatest(loading)
+  // const loadingLatestRef = useLatest(loading)
   const tempSteps = useMemo<TStepInit[]>(() => {
     if (!tempText) return [];
     try {
       const data = completeJSON(tempText) as {steps: TStepInit[]};
-      return data?.steps || []
+      return makeInitialSteps(data?.steps || [])
     } catch (error) {
       return []
     }
   }, [tempText])
 
+  useEffect(() => {
+    if (chatCb.cb !== defaultChatCb && typeof chatCb.cb === 'function' && !loading) {
+      chatCb.cb(loading)
+      setChatCb({cb: defaultChatCb})
+    }
+  }, [loading])
+
   const handleSendRequest = async () => {
     setTempText('')
     if (!title.trim()) return;
     setLoading(true);
-    const source = axios.CancelToken.source();
-
-    try {
-      const request = fetchModelChat({
-        messages: [charactorPrompt, {
-          role: 'user',
-          content: title
-        }],
-        modelType,
-      }, source.token)
-
-      request.then(response => {
-        const reader = response.data.getReader();
-        const decoder = new TextDecoder();
-
-        function readStream() {
-          reader.read().then(({ done, value }: { done: boolean, value: AllowSharedBufferSource }) => {
-            if (done) {
-              setLoading(false)
-              console.log('流式读取完成');
-              return;
-            }
-            
-            if (!loadingLatestRef.current) {
-              try {
-                reader.cancel();
-                source.cancel()
-              } catch (error) {
-                console.log('取消请求时发生错误:', error);
-              } finally {
-                // setLoading(false);
-              }
-              return;
-            }
-
-            // 处理数据块
-            const textChunk = decoder.decode(value);
-            setTempText(prevValue => prevValue + textChunk)
-            console.log('收到数据:', textChunk);
-
-            // 继续读取
-            readStream();
-          }).catch((err: any) => {
-            if (err.name === 'AbortError') {
-              console.log('用户主动取消');
-            } else {
-              console.error('读取错误:', err);
-            }
-            
-            // 重要！必须取消流读取器
-            return reader.cancel();
-          });
+    const newChatCb = handleChat(
+      [title.trim()],
+      ({
+        content, done
+      }) => {
+        if (content) {
+          setTempText(content)
+        };
+        if (done) {
+          setLoading(false)
+          setChatCb({cb: defaultChatCb})
         }
-
-        readStream();
-      }).catch(err => {
-        console.log('request err', err)
-      })
-
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      // console.log(123)
-      // setLoading(false);
-    }
+      }
+    )
+    setChatCb({cb: newChatCb})
   };
 
   return (
@@ -124,6 +78,13 @@ export default function AddScreen() {
         </TouchableOpacity>
       </View>
       {loading && <Text style={styles.loadingText}>正在生成任务清单...</Text>}
+      {
+        tempSteps.length > 0 && <View>
+          {
+            tempSteps.map(step => <StepItem step={step} />)
+          }
+        </View>
+      }
     </ThemedView>
   );
 }

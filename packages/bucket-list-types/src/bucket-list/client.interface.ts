@@ -42,6 +42,12 @@ export interface TStep {
 export interface TStepInit {
   title: string,
   steps: TStepInit[]
+  uuid?: string;
+  bucketListId?: string;
+  parentStepId?: string;
+  isCompleted?: boolean;
+
+  id?: string // 不存在
 }
 
 export interface TComment {
