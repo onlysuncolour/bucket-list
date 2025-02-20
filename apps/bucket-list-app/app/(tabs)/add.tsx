@@ -15,7 +15,7 @@ export default function AddScreen() {
   const [loading, setLoading] = useState(false);
   const charactorPrompt = {
     role: 'user',
-    content: '你是一个日程规划大师以及任务梳理大师，你需要帮我规划梳理我要做的接下来的事情，要按照步骤给我，可以更细粒度的给我。只需要给我返回JSON格式的数据，不要其他任何内容。JSON格式是 {steps: [{title: "", subSteps: [{title: "", subSteps: []}]}]}'
+    content: '你是一个日程规划大师以及任务梳理大师，你需要帮我规划梳理我要做的接下来的事情，要按照步骤给我，可以更细粒度的给我。只需要给我返回JSON格式的数据，不要其他任何内容。JSON格式是 {steps: [{title: "", steps: [{title: "", steps: []}]}]}'
   }
   const modelType: TModelType = 'textModel';
   const [tempText, setTempText] = useState('');

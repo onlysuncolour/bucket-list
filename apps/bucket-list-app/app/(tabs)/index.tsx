@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { request } from '@/request/request'
 import { fetchUserLogin } from '@/request/user.request';
 import { fetchAllBucketList } from '@/request/bucketList.request';
 import { ThemedView } from '@/components/ThemedView';
 import { TBucketListBrief } from 'bucket-list-types';
+import { ListItem } from '@/components/ListItem';
 
 export default function ListScreen() {
   const [bucketList, setBucketList] = useState<TBucketListBrief[]>([]);
@@ -43,10 +44,8 @@ export default function ListScreen() {
       {bucketList.length === 0 ? (
         <Text style={styles.emptyText}>暂无内容</Text>
       ) : (
-        bucketList.map((item: any) => (
-          <View key={item.id} style={styles.item}>
-            <Text>{item.title}</Text>
-          </View>
+        bucketList.map((item) => (
+          <ListItem key={item.id} item={item} />
         ))
       )}
     </ThemedView>

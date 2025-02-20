@@ -115,7 +115,7 @@ export class BucketListModel {
     let currentIds = ids;
 
     while (currentIds.length > 0) {
-      const subSteps = await handleSelectData({
+      const steps = await handleSelectData({
         table: 'steps',
         where: [
           { key: 'parent_step_id', value: currentIds, type: 'IN' },
@@ -123,11 +123,11 @@ export class BucketListModel {
         ],
       });
 
-      if (!subSteps || subSteps.length === 0) {
+      if (!steps || steps.length === 0) {
         break;
       }
 
-      currentIds = subSteps.map(step => step.id);
+      currentIds = steps.map(step => step.id);
       currentIds.forEach(id => allStepIds.add(id));
     }
 
@@ -199,8 +199,8 @@ export class BucketListModel {
       });
 
       // 递归处理子步骤
-      if (step.subSteps && step.subSteps.length > 0) {
-        await this.addSteps(stepId, userId, step.subSteps);
+      if (step.steps && step.steps.length > 0) {
+        await this.addSteps(stepId, userId, step.steps);
       }
     }
   }
@@ -283,12 +283,12 @@ export class BucketListModel {
       });
 
       // 递归处理子步骤
-      if (step.subSteps && step.subSteps.length > 0) {
-        const subSteps = step.subSteps.map(subStep => ({
+      if (step.steps && step.steps.length > 0) {
+        const steps = step.steps.map(subStep => ({
           ...subStep,
           parentStepId: stepId,
         }));
-        await this.updateSteps(bucketListId, subSteps);
+        await this.updateSteps(bucketListId, steps);
       }
     }
   }
@@ -509,8 +509,8 @@ export class BucketListModel {
       if (step.parentStepId) {
         const parentStep = stepsMap.get(step.parentStepId);
         if (parentStep) {
-          parentStep.subSteps = parentStep.subSteps || [];
-          parentStep.subSteps.push(step);
+          parentStep.steps = parentStep.steps || [];
+          parentStep.steps.push(step);
         }
       }
     });
@@ -597,8 +597,8 @@ export class BucketListModel {
     //     if (step.parentStepId) {
     //       const parentStep = bucketStepsMap.get(step.parentStepId);
     //       if (parentStep) {
-    //         parentStep.subSteps = parentStep.subSteps || [];
-    //         parentStep.subSteps.push(step);
+    //         parentStep.steps = parentStep.steps || [];
+    //         parentStep.steps.push(step);
     //       }
     //     }
     //   });
@@ -657,7 +657,7 @@ export class BucketListModel {
       isCompleted: data.is_completed,
       bucketListId: data.bucket_list_id,
       parentStepId: data.parent_step_id,
-      subSteps: []
+      steps: []
     };
   }
 

@@ -25,9 +25,10 @@ export interface TBucketListTag {
 
 export interface TStep {
   id: string;
+  uuid?: string
   title: string;
   description?: string;
-  subSteps?: TStep[];
+  steps?: TStep[];
   bucketListId: string;
   parentStepId?: string;
   category?: string;
@@ -40,7 +41,7 @@ export interface TStep {
 
 export interface TStepInit {
   title: string,
-  subSteps: TStepInit[]
+  steps: TStepInit[]
 }
 
 export interface TComment {

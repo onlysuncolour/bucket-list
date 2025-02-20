@@ -88,7 +88,7 @@ export interface TStepEntity extends Omit<TStepModel, 'created_at' | 'updated_at
   isCompleted: boolean;
   bucketListId: string;
   parentStepId?: string;
-  subSteps?: TStepEntity[];
+  steps?: TStepEntity[];
 }
 
 export interface TCommentEntity extends Omit<TCommentModel, 'created_at' | 'updated_at' | 'creator_id' | 'is_deleted' | 'bucket_list_id' | 'step_id' | 'reply_to_comment_id'> {

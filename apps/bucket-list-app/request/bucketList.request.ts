@@ -64,7 +64,7 @@ export function fetchDeleteBucketList(id: string) {
   })
 }
 
-export function fetchBucketListById(id: string) {
+export function fetchBucketListById(id: string):Promise<TBucketList> {
   return request.request({
     prefix: `${prefix}${path}`,
     path: getBucketListById.path,
