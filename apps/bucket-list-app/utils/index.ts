@@ -4,5 +4,5 @@ export {
   getLowercaseUuid,
   getNumberUuid,
 } from './uuid'
-export { handleChat } from './handleChat'
+// export { handleChat } from './handleChat'
 export {makeInitialSteps} from './makeInitialSteps'

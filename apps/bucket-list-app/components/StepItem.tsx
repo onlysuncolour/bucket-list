@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated, Dimensio
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { TStep, TStepInit } from 'bucket-list-types';
 import { PopoverMenu } from './popoverMenu';
+import { Popover, Button, YStack, XStack } from 'tamagui';
+import { ChevronRight } from '@tamagui/lucide-icons';
 
 interface StepItemProps {
   step: TStep | TStepInit;
@@ -146,7 +148,7 @@ export function StepItem({
   return (
     <View ref={containerRef} style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           style={styles.expandButton}
@@ -191,7 +193,56 @@ export function StepItem({
           </TouchableOpacity>
         )}
 
-        <PopoverMenu
+        <Popover size="$5" allowFlip stayInFrame offset={15} resize placement='bottom'>
+          <Popover.Trigger asChild>
+            <Button icon={ChevronRight} />
+          </Popover.Trigger>
+
+          <Popover.Content
+            borderWidth={1}
+            borderColor="$borderColor"
+            // width={300}
+            // height={300}
+            enterStyle={{ y: -10, opacity: 0 }}
+            exitStyle={{ y: -10, opacity: 0 }}
+            elevate
+            animation={[
+              'quick',
+              {
+                opacity: {
+                  overshootClamping: true,
+                },
+              },
+            ]}
+          >
+            <Popover.Arrow borderWidth={1} borderColor="$borderColor" />
+
+            <YStack gap="$3">
+              {/* <XStack gap="$3"> */}
+                <Button onPress={() => onComplete?.(step)}>完成1</Button>
+                <Button onPress={() => onDelete?.(step)}>删除2</Button>
+                <Button onPress={() => onAddSubTask?.(step)}>添加子任务</Button>
+                <Button onPress={() => onGenerateAI?.(step)}>AI生成</Button>
+                {/* <Label size="$3" htmlFor={Name}>
+              Name
+            </Label>
+            <Input f={1} size="$3" id={Name} /> */}
+              {/* </XStack> */}
+
+              {/* <Popover.Close asChild>
+            <Button
+              size="$3"
+              onPress={() => {
+              }}
+            >
+              Submit
+            </Button>
+          </Popover.Close> */}
+            </YStack>
+          </Popover.Content>
+        </Popover>
+
+        {/* <PopoverMenu
           triggerNode={<AntDesign name="right" size={24} color="#666" />}
           menus={[
             {title: '完成', action: () => onComplete?.(step)},
@@ -199,10 +250,10 @@ export function StepItem({
             {title: '添加子任务', action: () => onAddSubTask?.(step)},
             {title: 'AI生成', action: () => onGenerateAI?.(step)},
           ]}
-        ></PopoverMenu>
+        ></PopoverMenu> */}
         {/* <TouchableOpacity onPress={handleToggleActions} style={styles.actionsButton}> */}
-          {/* @ts-ignore */}
-          {/* <AntDesign name="right" size={24} color="#666" /> */}
+        {/* @ts-ignore */}
+        {/* <AntDesign name="right" size={24} color="#666" /> */}
         {/* </TouchableOpacity> */}
       </View>
 

@@ -2,7 +2,8 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 
 import { ThemedView } from '@/components/ThemedView';
 import { useEffect, useMemo, useState } from 'react';
 import Octicons from '@expo/vector-icons/Octicons';
-import { completeJSON, getUuid, handleChat, makeInitialSteps } from '@/utils';
+import { completeJSON, getUuid, makeInitialSteps } from '@/utils';
+import { handleChat } from '@/utils/handleChat'
 import { TStep, TStepInit } from 'bucket-list-types';
 import { StepItem } from '@/components/StepItem';
 import { PortalProvider } from 'tamagui';
