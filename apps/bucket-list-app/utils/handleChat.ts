@@ -5,7 +5,9 @@ type TModelType = 'textModel' | 'reasonerModel';
 
 const charactorPrompt = {
   role: 'user',
-  content: '你是一个日程规划大师以及任务梳理大师，你需要帮我规划梳理我要做的接下来的事情，要按照步骤给我，可以更细粒度的给我。只需要给我返回JSON格式的数据，不要其他任何内容。JSON格式是 {steps: [{title: "", steps: [{title: "", steps: []}]}]}'
+  content: `你是一个日程规划大师以及任务梳理大师，你需要帮我规划梳理我要做的接下来的事情，要按照步骤给我，可以更细粒度的给我。只需要给我返回JSON格式的数据，不要其他任何内容。\n` +
+  `请记住，要切实可行的步骤，有明确的完成目标，以及每个步骤的描述不要太长，也不要太短。\n` +
+  `JSON格式是 {steps: [{title: "", steps: [{title: "", steps: []}]}]}`
 }
 const modelType: TModelType = 'textModel';
 

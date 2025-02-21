@@ -7,6 +7,7 @@ import { fetchAllBucketList } from '@/request/bucketList.request';
 import { ThemedView } from '@/components/ThemedView';
 import { TBucketListBrief } from 'bucket-list-types';
 import { ListItem } from '@/components/ListItem';
+import { CurrentPopover } from '../CurrentPopover';
 
 export default function ListScreen() {
   const [bucketList, setBucketList] = useState<TBucketListBrief[]>([]);
@@ -40,6 +41,8 @@ export default function ListScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <CurrentPopover />
+
       <Text style={styles.title}>我的清单</Text>
       {bucketList.length === 0 ? (
         <Text style={styles.emptyText}>暂无内容</Text>

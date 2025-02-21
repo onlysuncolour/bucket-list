@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated, Dimensions } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { TStep, TStepInit } from 'bucket-list-types';
+import { PopoverMenu } from './popoverMenu';
 
 interface StepItemProps {
   step: TStep | TStepInit;
   bucketListId?: string;
-  onUpdate?: (stepId: string, title: string) => void;
-  onComplete?: (stepId: string) => void;
-  onDelete?: (stepId: string) => void;
-  onAddSubTask?: (stepId: string) => void;
-  onGenerateAI?: (stepId: string) => void;
+  onUpdate?: (step: TStep | TStepInit, title: string) => void;
+  onComplete?: (step: TStep | TStepInit) => void;
+  onDelete?: (step: TStep | TStepInit) => void;
+  onAddSubTask?: (step: TStep | TStepInit) => void;
+  onGenerateAI?: (step: TStep | TStepInit) => void;
 }
 
 export function StepItem({
@@ -27,9 +28,11 @@ export function StepItem({
   const [editedTitle, setEditedTitle] = useState(step.title);
   const [showActions, setShowActions] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, bottom: 'auto' });
   const pressTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const longPressTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const animationValue = useRef(new Animated.Value(0)).current;
+  const containerRef = useRef<View>(null);
 
   useEffect(() => {
     return () => {
@@ -53,7 +56,7 @@ export function StepItem({
 
       longPressTimeoutRef.current = setTimeout(() => {
         if (onComplete) {
-          onComplete(step.id || step.uuid || '');
+          onComplete(step || '');
         }
         setIsLongPressing(false);
         animationValue.setValue(0);
@@ -88,19 +91,39 @@ export function StepItem({
   };
 
   const handleStartEdit = () => {
+    setEditedTitle(step.title)
     setIsEditing(true);
   };
 
   const handleSaveEdit = () => {
     if (editedTitle.trim() !== step.title && onUpdate) {
-      onUpdate(step.id || step.uuid || '', editedTitle.trim());
+      onUpdate(step, editedTitle.trim());
     }
     setIsEditing(false);
   };
 
-  const handleToggleActions = () => {
-    setShowActions(!showActions);
-  };
+  // const handleToggleActions = () => {
+  //   if (!showActions) {
+  //     const headerElement = containerRef.current?.children[0];
+  //     if (headerElement) {
+  //       const header = headerElement as unknown as View;
+  //       header.measure((x, y, width, headerHeight, pageX, pageY) => {
+  //         const windowHeight = Dimensions.get('window').height;
+  //         const spaceBelow = windowHeight - pageY - headerHeight - 16;
+  //         const menuHeight = 160; // 估算的菜单高度
+
+  //         if (spaceBelow < menuHeight && pageY > menuHeight) {
+  //           // 如果下方空间不足且上方空间足够，向上展开
+  //           setMenuPosition({ bottom: headerHeight, top: 'auto' });
+  //         } else {
+  //           // 默认向下展开
+  //           setMenuPosition({ top: headerHeight + 16, bottom: 'auto' });
+  //         }
+  //       });
+  //     }
+  //   }
+  //   setShowActions(!showActions);
+  // };
 
   const getCurrentIcon = () => {
     if (!step.steps || step.steps.length === 0) {
@@ -121,7 +144,7 @@ export function StepItem({
   };
 
   return (
-    <View style={styles.container}>
+    <View ref={containerRef} style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
           onPressIn={handlePressIn}
@@ -168,36 +191,52 @@ export function StepItem({
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity onPress={handleToggleActions} style={styles.actionsButton}>
+        <PopoverMenu
+          triggerNode={<AntDesign name="right" size={24} color="#666" />}
+          menus={[
+            {title: '完成', action: () => onComplete?.(step)},
+            {title: '删除', action: () => onDelete?.(step)},
+            {title: '添加子任务', action: () => onAddSubTask?.(step)},
+            {title: 'AI生成', action: () => onGenerateAI?.(step)},
+          ]}
+        ></PopoverMenu>
+        {/* <TouchableOpacity onPress={handleToggleActions} style={styles.actionsButton}> */}
           {/* @ts-ignore */}
-          <AntDesign name="right" size={24} color="#666" />
-        </TouchableOpacity>
+          {/* <AntDesign name="right" size={24} color="#666" /> */}
+        {/* </TouchableOpacity> */}
       </View>
 
-      {showActions && (
-        <View style={styles.actionsMenu}>
+      {/* {showActions && (
+        <>
           <TouchableOpacity
-            style={styles.actionItem}
-            onPress={() => onComplete?.(step.id || step.uuid || '')}>
-            <Text>完成</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionItem}
-            onPress={() => onDelete?.(step.id || step.uuid || '')}>
-            <Text>删除</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionItem}
-            onPress={() => onAddSubTask?.(step.id || step.uuid || '')}>
-            <Text>添加子任务</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionItem}
-            onPress={() => onGenerateAI?.(step.id || step.uuid || '')}>
-            <Text>AI生成</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            style={styles.overlay}
+            activeOpacity={0}
+            onPress={() => setShowActions(false)}
+          />
+          <View style={[styles.actionsMenu, menuPosition]}>
+            <TouchableOpacity
+              style={styles.actionItem}
+              onPress={() => onComplete?.(step)}>
+              <Text>完成</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionItem}
+              onPress={() => onDelete?.(step)}>
+              <Text>删除</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionItem}
+              onPress={() => onAddSubTask?.(step)}>
+              <Text>添加子任务</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionItem}
+              onPress={() => onGenerateAI?.(step)}>
+              <Text>AI生成</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )} */}
 
       {isExpanded && step.steps && step.steps.length > 0 && (
         <View style={styles.subSteps}>
@@ -225,10 +264,14 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
+    position: 'relative',
+    // zIndex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    position: 'relative',
+    zIndex: 3,
   },
   expandButton: {
     marginRight: 8,
@@ -250,23 +293,38 @@ const styles = StyleSheet.create({
   actionsButton: {
     marginLeft: 8,
   },
+  overlay: {
+    position: 'absolute',
+    top: -1000,
+    left: -1000,
+    right: -1000,
+    bottom: -1000,
+    backgroundColor: 'transparent',
+    zIndex: 2,
+  },
   actionsMenu: {
-    marginTop: 8,
+    position: 'absolute',
+    right: 0,
     padding: 8,
     backgroundColor: '#fff',
     borderRadius: 4,
-    elevation: 2,
+    elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    zIndex: 3,
+    minWidth: 80,
   },
   actionItem: {
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
   },
   subSteps: {
     marginTop: 8,
     marginLeft: 24,
+    position: 'relative',
+    zIndex: 1,
   },
 });
