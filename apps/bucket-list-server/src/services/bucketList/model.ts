@@ -528,6 +528,10 @@ export class BucketListModel {
         { key: 'creator_id', value: creatorId, type: '=' },
         { key: 'is_deleted', value: false, type: '=' },
       ],
+      orderBy: {
+        key: 'updated_at',
+        type: 'desc'
+      }
     });
 
     if (!bucketListsResult || bucketListsResult.length === 0) {

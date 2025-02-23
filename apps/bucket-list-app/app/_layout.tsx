@@ -1,12 +1,14 @@
 import '../tamagui-web.css'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { StatusBar, useColorScheme } from 'react-native'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { useFonts } from 'expo-font'
 import { SplashScreen, Stack } from 'expo-router'
 import { Provider } from './Provider'
 import { useTheme } from 'tamagui'
+import { request } from '@/request/request'
+import { fetchUserLogin } from '@/request/user.request'
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -31,6 +33,34 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  const [userLoaded, setUserLoaded] = useState(false)
+
+  useEffect(() => {
+    checkAuthAndFetchList();
+  }, []);
+
+  const checkAuthAndFetchList = async () => {
+    try {
+      const refreshToken = await request.getRefreshToken()
+      
+      if (!refreshToken) {
+        const deviceUuid = await request.getDeviceUuid();
+
+        const loginResult = await fetchUserLogin({ deviceUuid });
+        
+        if (loginResult.refreshToken) {
+          // await AsyncStorage.setItem('refreshToken', loginResult.refreshToken);
+          await request.setRefreshToken(loginResult.refreshToken)
+          await request.setAccessToken(loginResult.accessToken)
+        }
+      }
+      
+      setUserLoaded(true)
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
 
   useEffect(() => {
     // if (interLoaded || interError) {
@@ -43,7 +73,7 @@ export default function RootLayout() {
   }, [loaded])
   // }, [interLoaded, interError])
 
-  if (!loaded) {
+  if (!loaded || !userLoaded) {
     return null
   }
   // if (!interLoaded && !interError) {

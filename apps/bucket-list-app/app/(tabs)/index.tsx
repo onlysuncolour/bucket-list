@@ -1,48 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
-import { request } from '@/request/request'
-import { fetchUserLogin } from '@/request/user.request';
 import { fetchAllBucketList } from '@/request/bucketList.request';
 import { ThemedView } from '@/components/ThemedView';
 import { TBucketListBrief } from 'bucket-list-types';
 import { ListItem } from '@/components/ListItem';
-import { CurrentPopover } from '../CurrentPopover';
 
 export default function ListScreen() {
   const [bucketList, setBucketList] = useState<TBucketListBrief[]>([]);
 
   useEffect(() => {
-    checkAuthAndFetchList();
-  }, []);
-
-  const checkAuthAndFetchList = async () => {
-    try {
-      const refreshToken = await request.getRefreshToken()
-      
-      if (!refreshToken) {
-        const deviceUuid = await request.getDeviceUuid();
-
-        const loginResult = await fetchUserLogin({ deviceUuid });
-        
-        if (loginResult.refreshToken) {
-          // await AsyncStorage.setItem('refreshToken', loginResult.refreshToken);
-          await request.setRefreshToken(loginResult.refreshToken)
-          await request.setAccessToken(loginResult.accessToken)
-        }
-      }
-      
-      const listResult = await fetchAllBucketList();
+    fetchAllBucketList().then(listResult => {
       setBucketList(listResult || []);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
+    })
+  }, []);
 
   return (
     <ThemedView style={styles.container}>
-      <CurrentPopover />
-
       <Text style={styles.title}>我的清单</Text>
       {bucketList.length === 0 ? (
         <Text style={styles.emptyText}>暂无内容</Text>
