@@ -14,7 +14,10 @@ export class BucketListService {
 
   static async createBucketList(data: Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>, userId: string) {
     try {
-      const id = await BucketListModel.create(data);
+      console.log({
+        userId
+      })
+      const id = await BucketListModel.create(data, userId);
       return await this.getBucketListById(id, userId);
     } catch (error) {
       throw handleError(error as Error);

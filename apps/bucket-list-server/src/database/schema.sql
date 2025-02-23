@@ -105,5 +105,7 @@ CREATE TABLE IF NOT EXISTS bucket_list_shares (
 );
 
 ALTER TABLE bucket_lists
-ADD COLUMN step_count INT NOT NULL DEFAULT 0,
-ADD COLUMN completed_step_count INT NOT NULL DEFAULT 0;
+ADD COLUMN step_count INT NOT NULL DEFAULT 0;
+
+ALTER TABLE bucket_lists
+ADD COLUMN step_complete_count INT NOT NULL DEFAULT 0;

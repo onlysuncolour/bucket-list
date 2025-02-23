@@ -240,26 +240,25 @@ export class BucketListModel {
     });
   }
 
-  private static async updateSteps(bucketListId: string, steps: Omit<TStepEntity, 'createdAt' | 'updatedAt' | 'bucketListId'>[] = []) {
-    // 这个方法暂时没用了。
-    // 获取当前所有的步骤
-    const currentSteps = await handleSelectData({
-      table: 'steps',
-      where: [
-        { key: 'bucket_list_id', value: bucketListId, type: '=' },
-        { key: 'is_deleted', value: false, type: '=' },
-      ],
-    });
+  private static async updateSteps(bucketListId: string, steps: Omit<TStepEntity, 'createdAt' | 'updatedAt' | 'bucketListId'>[] = [], userId: string) {
+    // // 获取当前所有的步骤
+    // const currentSteps = await handleSelectData({
+    //   table: 'steps',
+    //   where: [
+    //     { key: 'bucket_list_id', value: bucketListId, type: '=' },
+    //     { key: 'is_deleted', value: false, type: '=' },
+    //   ],
+    // });
 
-    // 标记所有现有步骤为已删除
-    if (currentSteps.length > 0) {
-      await handleUpdateData({
-        table: 'steps',
-        fields: ['is_deleted'],
-        data: { is_deleted: true },
-        where: [{ key: 'bucket_list_id', value: bucketListId, type: '=' }],
-      });
-    }
+    // // 标记所有现有步骤为已删除
+    // if (currentSteps.length > 0) {
+    //   await handleUpdateData({
+    //     table: 'steps',
+    //     fields: ['is_deleted'],
+    //     data: { is_deleted: true },
+    //     where: [{ key: 'bucket_list_id', value: bucketListId, type: '=' }],
+    //   });
+    // }
 
     // 创建或更新步骤
     for (const step of steps) {
@@ -275,7 +274,7 @@ export class BucketListModel {
           parent_step_id: step.parentStepId,
           category: step.category,
           tags: step.tags,
-          creator_id: step.creatorId,
+          creator_id: userId,
           is_deleted: false,
           is_completed: step.isCompleted,
         }],
@@ -288,12 +287,12 @@ export class BucketListModel {
           ...subStep,
           parentStepId: stepId,
         }));
-        await this.updateSteps(bucketListId, steps);
+        await this.updateSteps(bucketListId, steps, userId);
       }
     }
   }
 
-  static async create(data: Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>) {
+  static async create(data: Omit<TBucketListEntity, 'id' | 'createdAt' | 'updatedAt'>, userId: string) {
     const id = crypto.randomUUID();
     const generatedTags = this.generateTagsFromTitle(data.title);
     const tags = data.tags?.map(tag => tag.name) || generatedTags;
@@ -306,8 +305,8 @@ export class BucketListModel {
         title: data.title,
         description: data.description,
         category: data.category,
-        creator_id: data.creatorId,
-        is_deleted: data.isDeleted,
+        creator_id: userId,
+        is_deleted: false,
         is_completed: data.isCompleted,
         step_count: data.stepCount || 0,
         step_complete_count: data.stepCompleteCount || 0,
@@ -320,7 +319,7 @@ export class BucketListModel {
 
     // 更新步骤
     if (data.steps && data.steps.length > 0) {
-      await this.updateSteps(id, data.steps);
+      await this.updateSteps(id, data.steps, userId);
     }
 
     return id;

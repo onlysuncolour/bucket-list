@@ -2,11 +2,13 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 
 import { ThemedView } from '@/components/ThemedView';
 import { useEffect, useMemo, useState } from 'react';
 import Octicons from '@expo/vector-icons/Octicons';
-import { completeJSON, getUuid, makeInitialSteps } from '@/utils';
+import { completeJSON, fixSteps, getUuid, makeInitialSteps } from '@/utils';
 import { handleChat } from '@/utils/handleChat'
 import { TStep, TStepInit } from 'bucket-list-types';
 import { StepItem } from '@/components/StepItem';
 import { PortalProvider } from 'tamagui';
+import { fetchCreateBucketList } from '@/request/bucketList.request';
+import { getBucketListCount } from '@/request/getBucketListCount';
 
 const defaultChatCb = (v: boolean) => {};
 
@@ -14,8 +16,8 @@ export default function AddScreen() {
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [tempText, setTempText] = useState('');
-  const [tempStepNode, setTempStepNode] = useState<any>([0]);
   const [chatCb, setChatCb] = useState<{cb: (v: boolean) => void}>({cb: defaultChatCb});
+  const [steps, setSteps] = useState<TStepInit[]>([]);
 
   // const loadingLatestRef = useLatest(loading)
   const tempSteps = useMemo<TStepInit[]>(() => {
@@ -31,8 +33,6 @@ export default function AddScreen() {
   useEffect(() => {
     setSteps(tempSteps)
   }, [tempSteps])
-
-  const [steps, setSteps] = useState<TStepInit[]>([]);
 
   const updateStepByUuid = (steps: TStepInit[], uuid: string, updater: (step: TStepInit) => TStepInit): TStepInit[] => {
     return steps.map(step => {
@@ -132,10 +132,36 @@ export default function AddScreen() {
     setChatCb({cb: newChatCb})
   };
 
+  const handleAdd = () => {
+    const bucketSteps = fixSteps(steps)
+    const bucketList = {
+      title: title,
+      steps: bucketSteps,
+      isCompleted: false,
+      ...getBucketListCount(bucketSteps)
+    }
+    fetchCreateBucketList(
+      bucketList
+    )
+  };
+
+  const isDisabled = useMemo(() => {
+    if (!title.trim() || steps.length === 0 || loading) {
+      return true;
+    } else {
+      return false;
+    }
+  }, [title, steps, loading]);
+
   return (
     <PortalProvider shouldAddRootHost>
       <ThemedView style={styles.container}>
-        <Text style={styles.title}>添加新的清单项</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>添加新的清单项</Text>
+          <TouchableOpacity style={[styles.saveButton, isDisabled && styles.buttonDisabled]} onPress={handleAdd} disabled={isDisabled}>
+            <Octicons name="check" size={24} color={isDisabled ? "#ccc" : "#0a7ea4"} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -179,10 +205,18 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  titleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
+  },
+  saveButton: {
+    padding: 8,
   },
   inputContainer: {
     flexDirection: 'row',

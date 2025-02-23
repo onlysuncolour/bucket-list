@@ -1,6 +1,6 @@
 import {request} from './request' ;
 import meta from './meta';
-import { TBucketList, TBucketListBrief, TStep } from 'bucket-list-types';
+import { TBucketList, TBucketListBrief, TBucketListInit, TStep } from 'bucket-list-types';
 const {
   prefix,
   path,
@@ -32,7 +32,7 @@ export function fetchAllBucketList():Promise<TBucketListBrief[]> {
 }
 
 export function fetchCreateBucketList(
-  body: Omit<TBucketList, "id" | "tags" | "createdAt" | "updatedAt" | "creatorId" | "isDeleted" | "isCompleted">)
+  body: TBucketListInit)
   :Promise<TBucketList> {
   return request.request({
     prefix: `${prefix}${path}`,

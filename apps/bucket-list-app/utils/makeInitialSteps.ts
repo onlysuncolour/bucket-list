@@ -6,11 +6,11 @@ export function makeInitialSteps(
   options?: {
     parentStepId?: string;
     bucketListId?: string
-  }
+  },
+  uuidPrefix = '0-'
 ) {
-
-  steps.forEach(step => {
-    step.uuid = getUuid();
+  steps.forEach((step, index) => {
+    step.uuid = `${uuidPrefix}${index}`;
     step.isCompleted = false;
     if (options?.parentStepId) {
       step.parentStepId = options.parentStepId;
@@ -22,7 +22,9 @@ export function makeInitialSteps(
       makeInitialSteps(step.steps, {
         // parentStepId: step.uuid,
         bucketListId: options?.bucketListId
-      })
+      },
+        `${step.uuid}-`
+      )
     }
   })
   return steps

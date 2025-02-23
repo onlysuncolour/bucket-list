@@ -41,13 +41,21 @@ export interface TStep {
 
 export interface TStepInit {
   title: string,
-  steps: TStepInit[]
+  steps?: TStepInit[]
   uuid?: string;
   bucketListId?: string;
   parentStepId?: string;
   isCompleted?: boolean;
 
   id?: string // 不存在
+}
+
+export interface TBucketListInit {
+  title: string;
+  steps: TStepInit[];
+  stepCount: number;
+  stepCompleteCount: number;
+  isCompleted: boolean
 }
 
 export interface TComment {
