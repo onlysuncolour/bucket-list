@@ -546,7 +546,10 @@ export class BucketListModel {
     });
 
     // 并行查询标签和步骤
-    const [tagsResult, stepsResult] = await Promise.all([
+    const [
+      tagsResult, 
+      // stepsResult
+    ] = await Promise.all([
       // 查询关联的标签
       handleSelectData({
         table: BUCKET_LIST_TAGS_TABLE,
@@ -559,13 +562,13 @@ export class BucketListModel {
         where: [{ key: 'bucket_list_id', value: bucketListIds, type: 'IN' }],
       }),
       // 查询关联的步骤
-      handleSelectData({
-        table: 'steps',
-        where: [
-          { key: 'bucket_list_id', value: bucketListIds, type: 'IN' },
-          { key: 'is_deleted', value: false, type: '=' },
-        ],
-      })
+      // handleSelectData({
+      //   table: 'steps',
+      //   where: [
+      //     { key: 'bucket_list_id', value: bucketListIds, type: 'IN' },
+      //     { key: 'is_deleted', value: false, type: '=' },
+      //   ],
+      // })
     ]);
 
     // 处理标签数据

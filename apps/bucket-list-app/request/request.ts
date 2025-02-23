@@ -264,7 +264,7 @@ class Request {
     // 处理路径参数
     let url = `${prefix}${path}`;
     if (param) {
-      url = path.replace(/\{([^}]+)\}/g, (match, key) => {
+      url = url.replace(/\{([^}]+)\}/g, (match, key) => {
         const value = param[key];
         if (value === undefined) {
           throw new Error(`请求失败，缺少参数！`);
@@ -273,7 +273,6 @@ class Request {
       });
     }
 
-    // const url = `${prefix}${processedPath}`;
     const requestConfig: RequestConfig = {
       ...config,
       url,

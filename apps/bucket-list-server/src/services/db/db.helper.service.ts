@@ -207,6 +207,10 @@ function makeWhereClause(where?: TDbWhere[]) {
     if (item.type === 'between') {
       return `${item.key} BETWEEN ? AND ?`
     }
+    if (item.type.toUpperCase() === 'IN') {
+      const placeholders = Array.isArray(item.value) ? item.value : [item.value];
+      return `${item.key} IN (${placeholders.map(() => '?').join(',')})`
+    }
     return `${item.key} ${item.type} ?`
   }).join(' AND '),
   values: any[] = [];
@@ -214,6 +218,9 @@ function makeWhereClause(where?: TDbWhere[]) {
   where.forEach(item => {
     if (item.type === 'between') {
       values.push(item.value[0], item.value[1])
+    } else if (item.type.toUpperCase() === 'IN') {
+      const inValues = Array.isArray(item.value) ? item.value : [item.value];
+      values.push(...inValues);
     } else {
       values.push(item.value)
     }
